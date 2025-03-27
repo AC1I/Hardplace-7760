@@ -53,7 +53,8 @@ END_MESSAGE_MAP()
 CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_HARDPLACE_7760_DIALOG, pParent),
 	m_FreqInput1(0), m_FreqInput2(0)
-	, m_iRFLevel(-1), m_uPower(0), m_fPlacementSet(false)
+	, m_iRFLevel(-1), m_uPower(0)
+	, m_uPwrAlertThreshold(theApp.GetProfileInt(_T("Settings"), _T("PowerAlarmThreshold"), 0x0149)), m_fPlacementSet(false)
 	, m_Amp(-1)
 	, m_MaxPower(-1)
 	, m_PwrOn(-1)
@@ -132,6 +133,7 @@ BOOL CHardplace7760Dlg::OnInitDialog()
 	// TODO: Add extra initialization here
 	SetDlgItemText(IDC_FREQUENCY, _T(""));
 	SetDlgItemText(IDC_POWERALARM, _T(""));
+	
 	m_PwrCtrl.SetRange(0, 255);
 	m_PwrCtrl.SetPageSize(m_PwrCtrl.GetRangeMax() / 10);
 	m_PwrCtrl.SetPos(m_PwrCtrl.GetRangeMax());
@@ -717,7 +719,7 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 			{
 				unsigned uOutputPower((m_IC_PW2_RcvBuf[6] << 8) | m_IC_PW2_RcvBuf[7]);
 
-				if (uOutputPower >= 0x0149)
+				if (uOutputPower >= m_uPwrAlertThreshold)
 				{
 					SetDlgItemText(IDC_POWERALARM, _T("POWER!"));
 				}

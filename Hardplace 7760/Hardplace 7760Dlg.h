@@ -48,6 +48,7 @@ protected:
 	uint64_t m_FreqInput1;
 	uint64_t m_FreqInput2;
 	unsigned m_uPower;
+	const unsigned m_uPwrAlertThreshold;
 	bool m_fPlacementSet;
 	CComboBox m_IC_PW2_Port;
 	CComboBox m_IC_7760_Port;
