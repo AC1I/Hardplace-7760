@@ -61,6 +61,7 @@ CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_AmpSetting, sizeof m_PW2_AmpSetting));
 	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_PowerSetting, sizeof m_PW2_PowerSetting));
+	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_PowerOut, sizeof m_PW2_PowerOut));
 	m_IC_7760_PollQueue.Add(std::make_pair(m_IC7760_RFLevel, sizeof m_IC7760_RFLevel));
 }
 
@@ -130,6 +131,7 @@ BOOL CHardplace7760Dlg::OnInitDialog()
 
 	// TODO: Add extra initialization here
 	SetDlgItemText(IDC_FREQUENCY, _T(""));
+	SetDlgItemText(IDC_POWERALARM, _T(""));
 	m_PwrCtrl.SetRange(0, 255);
 	m_PwrCtrl.SetPageSize(m_PwrCtrl.GetRangeMax() / 10);
 	m_PwrCtrl.SetPos(m_PwrCtrl.GetRangeMax());
@@ -706,6 +708,25 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 				m_FreqInput1 / 1000000, (m_FreqInput1 % 1000000) / 1000, (m_FreqInput1 % 1000) / 10,
 				m_FreqInput2 / 1000000, (m_FreqInput2 % 1000000) / 1000, (m_FreqInput2 % 1000) / 10);
 			SetDlgItemText(IDC_FREQUENCY, textVal);
+			break;
+
+		case 0x15:
+			switch (m_IC_PW2_RcvBuf[5])
+			{
+			case 0x11:
+			{
+				unsigned uOutputPower((m_IC_PW2_RcvBuf[6] << 8) | m_IC_PW2_RcvBuf[7]);
+
+				if (uOutputPower >= 0x0149)
+				{
+					SetDlgItemText(IDC_POWERALARM, _T("POWER!"));
+				}
+				else
+				{
+					SetDlgItemText(IDC_POWERALARM, _T(""));
+				}
+			}
+			}
 			break;
 
 		case 0x1A:
