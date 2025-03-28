@@ -54,7 +54,7 @@ CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_HARDPLACE_7760_DIALOG, pParent),
 	m_FreqInput1(0), m_FreqInput2(0)
 	, m_iRFLevel(-1), m_uPower(0)
-	, m_uPwrAlertThreshold(theApp.GetProfileInt(_T("Settings"), _T("PowerAlarmThreshold"), 0x0149)), m_fPlacementSet(false)
+	, m_uPwrAlertThreshold(theApp.GetProfileInt(_T("Settings"), _T("PowerAlarmThreshold"), 0xFFFF)), m_fPlacementSet(false)
 	, m_Amp(-1)
 	, m_MaxPower(-1)
 	, m_PwrOn(-1)
@@ -96,6 +96,7 @@ BEGIN_MESSAGE_MAP(CHardplace7760Dlg, CDialogEx)
 	ON_WM_VSCROLL()
 	ON_WM_SHOWWINDOW()
 	ON_WM_DESTROY()
+	ON_WM_CTLCOLOR()
 END_MESSAGE_MAP()
 
 
@@ -619,6 +620,8 @@ void CHardplace7760Dlg::OnClickedRFLevel(UINT nId)
 	default:
 		break;
 	}
+	m_iRFLevel = -1;
+	UpdateData(FALSE);
 }
 
 void CHardplace7760Dlg::OnClickedPower(UINT nId)
@@ -906,4 +909,15 @@ void CHardplace7760Dlg::OnDestroy()
 	GetWindowPlacement(&wp);
 	theApp.WriteProfileBinary(_T("Settings"), _T("Window"), (LPBYTE)&wp, wp.length);
 	//theApp.WriteProfileInt(_T("Settings"), _T("OnTop"), (GetWindowLong(GetSafeHwnd(), GWL_EXSTYLE) & WS_EX_TOPMOST) != 0 ? 1 : 0);
+}
+
+HBRUSH CHardplace7760Dlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
+{
+	if (nCtlColor == CTLCOLOR_STATIC
+		&& pWnd->GetSafeHwnd() == GetDlgItem(IDC_POWERALARM)->GetSafeHwnd())
+	{
+		pDC->SetTextColor(RGB(255, 0, 0));
+		return (HBRUSH)GetStockObject(NULL_BRUSH);
+	}
+	return CDialog::OnCtlColor(pDC, pWnd, nCtlColor);
 }
