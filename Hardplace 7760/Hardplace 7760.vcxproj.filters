@@ -68,5 +68,8 @@
     <Image Include="..\..\..\..\Downloads\ico128.ico">
       <Filter>Resource Files</Filter>
     </Image>
+    <Image Include="..\..\..\..\downloads\icon2.ico">
+      <Filter>Resource Files</Filter>
+    </Image>
   </ItemGroup>
 </Project>

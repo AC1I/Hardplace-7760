@@ -131,10 +131,9 @@ BOOL CHardplace7760Dlg::OnInitDialog()
 	SetIcon(m_hIcon, TRUE);			// Set big icon
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
-	// TODO: Add extra initialization here
 	SetDlgItemText(IDC_FREQUENCY, _T(""));
 	SetDlgItemText(IDC_POWERALARM, _T(""));
-	
+
 	m_PwrCtrl.SetRange(0, 255);
 	m_PwrCtrl.SetPageSize(m_PwrCtrl.GetRangeMax() / 10);
 	m_PwrCtrl.SetPos(m_PwrCtrl.GetRangeMax());
@@ -266,7 +265,6 @@ HCURSOR CHardplace7760Dlg::OnQueryDragIcon()
 
 void CHardplace7760Dlg::OnClose()
 {
-	// TODO: Add your message handler code here and/or call default
 	KillTimer(m_idTimerEvent);
 	try
 	{
@@ -337,7 +335,6 @@ void CHardplace7760Dlg::On7760ComOpen()
 
 bool CHardplace7760Dlg::OpenCommPort(int iPort, CSerialPort& Port, bool fQuiet)
 {
-	// TODO: Add your implementation code here.
 	try
 	{
 		if (!Port.IsOpen())
@@ -537,7 +534,7 @@ void CHardplace7760Dlg::OnClickedAmp(UINT nId)
 
 		m_IC_PW2_XmtQueue.Add(std::make_pair(auchCmd, sizeof auchCmd));
 	}
-		break;
+	break;
 
 	case 1:
 	{
@@ -653,7 +650,6 @@ void CHardplace7760Dlg::OnClickedPower(UINT nId)
 
 void CHardplace7760Dlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
 {
-	// TODO: Add your message handler code here and/or call default
 	if (pScrollBar == (CScrollBar*)(&m_PwrCtrl))
 	{
 		switch (nSBCode)
@@ -663,17 +659,16 @@ void CHardplace7760Dlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBa
 
 		case TB_ENDTRACK:
 		case TB_THUMBPOSITION:
-			{
-				int iLevel(abs(m_PwrCtrl.GetPos() - m_PwrCtrl.GetRangeMax()));
-				static uint8_t auchCmd[] = { 0xFE, 0xFE, 0xB2, 0xE0, 0x14, 0x0A, 0x02, 0x55, 0xFD };
-				unsigned uLevelLow(iLevel % 100);
-				unsigned uLevelHigh(iLevel / 100);
+		{
+			int iLevel(abs(m_PwrCtrl.GetPos() - m_PwrCtrl.GetRangeMax()));
+			unsigned uLevelLow(iLevel % 100);
+			unsigned uLevelHigh(iLevel / 100);
 
-				auchCmd[6] = ((uLevelHigh / 10) << 4) + uLevelHigh % 10;
-				auchCmd[7] = ((uLevelLow / 10) << 4) + uLevelLow % 10;
-				m_IC_7760_XmtQueue.Add(std::make_pair(auchCmd, sizeof auchCmd));
-			}
-			break;
+			m_IC7760SetPower[6] = ((uLevelHigh / 10) << 4) + uLevelHigh % 10;
+			m_IC7760SetPower[7] = ((uLevelLow / 10) << 4) + uLevelLow % 10;
+			m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760SetPower, sizeof m_IC7760SetPower));
+		}
+		break;
 		}
 	}
 
@@ -682,9 +677,6 @@ void CHardplace7760Dlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBa
 
 void CHardplace7760Dlg::onIC_PW2Packet()
 {
-	// TODO: Add your implementation code here.
-	// FE FE 01 AA 1C 03 00 45 07 28 00 FD                                     
-	// FE FE 00 AA 00 00 45 07 28 00 FD
 	while (m_IC_PW2_RcvBuf.GetCount() > 5)
 	{
 		if (m_IC_PW2_RcvBuf[0] == 0xFE
@@ -731,6 +723,10 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 					SetDlgItemText(IDC_POWERALARM, _T(""));
 				}
 			}
+			break;
+
+			default:
+				break;
 			}
 			break;
 
@@ -785,13 +781,11 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 		}
 	}
 
-
 	m_IC_PW2_RcvBuf.RemoveAll();
 }
 
 void CHardplace7760Dlg::onIC_7760Packet()
 {
-	// TODO: Add your implementation code here.
 	while (m_IC_7760_RcvBuf.GetCount() > 5)
 	{
 		if (m_IC_7760_RcvBuf[0] == 0xFE
@@ -851,7 +845,7 @@ void CHardplace7760Dlg::onIC_7760Packet()
 				}
 				m_uPower = uPower;
 			}
-				break;
+			break;
 
 			default:
 				break;

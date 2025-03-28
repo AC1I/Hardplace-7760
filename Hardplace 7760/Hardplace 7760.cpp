@@ -7,8 +7,6 @@
 #include "Hardplace 7760.h"
 #include "Hardplace 7760Dlg.h"
 
-#pragma comment (lib, "OneCore.lib")
-
 #ifdef _DEBUG
 #define new DEBUG_NEW
 #endif
