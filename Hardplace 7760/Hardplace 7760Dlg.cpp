@@ -776,6 +776,18 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 			}
 			break;
 
+		case 0xFA:
+			UpdateData();
+			if (m_Amp != -1
+				|| m_MaxPower != -1)
+			{
+				SetDlgItemText(IDC_FREQUENCY, _T(""));
+				m_Amp = -1;
+				m_MaxPower = -1;
+				UpdateData(FALSE);
+			}
+			break;
+		
 		default:
 			break;
 		}
