@@ -49,6 +49,7 @@ protected:
 	uint64_t m_FreqInput2;
 	unsigned m_uPower;
 	const unsigned m_uPwrAlertThreshold;
+	bool m_fAlertIssued;
 	bool m_fPlacementSet;
 	CComboBox m_IC_PW2_Port;
 	CComboBox m_IC_7760_Port;
@@ -72,7 +73,6 @@ public:
 	afx_msg void OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar);
 	afx_msg void OnShowWindow(BOOL bShow, UINT nStatus);
 	afx_msg void OnDestroy();
-	afx_msg HBRUSH OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor);
 
 protected:
 	afx_msg void OnClickedAmp(UINT nId);

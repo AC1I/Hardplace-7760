@@ -54,7 +54,8 @@ CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_HARDPLACE_7760_DIALOG, pParent),
 	m_FreqInput1(0), m_FreqInput2(0)
 	, m_iRFLevel(-1), m_uPower(0)
-	, m_uPwrAlertThreshold(theApp.GetProfileInt(_T("Settings"), _T("PowerAlarmThreshold"), 0xFFFF)), m_fPlacementSet(false)
+	, m_uPwrAlertThreshold(theApp.GetProfileInt(_T("Settings"), _T("PowerAlarmThreshold"), 0xFFFF))
+	, m_fAlertIssued(false), m_fPlacementSet(false)
 	, m_Amp(-1)
 	, m_MaxPower(-1)
 	, m_PwrOn(-1)
@@ -73,8 +74,6 @@ void CHardplace7760Dlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_7760_PORT, m_IC_7760_Port);
 	DDX_Control(pDX, IDC_POWER, m_PwrCtrl);
 	DDX_Control(pDX, IDC_FREQUENCY, m_Frequency);
-	//  DDX_Control(pDX, IDC_PW2_COM_OPEN, m_PW2_Open_Button);
-	//  DDX_Control(pDX, IDC_7760_COM_OPEN, m_7760_Open);
 	DDX_Radio(pDX, IDC_50W, m_iRFLevel);
 	DDX_Radio(pDX, IDC_AMP_OFF, m_Amp);
 	DDX_Radio(pDX, IDC_AMP_500W, m_MaxPower);
@@ -96,7 +95,6 @@ BEGIN_MESSAGE_MAP(CHardplace7760Dlg, CDialogEx)
 	ON_WM_VSCROLL()
 	ON_WM_SHOWWINDOW()
 	ON_WM_DESTROY()
-	ON_WM_CTLCOLOR()
 END_MESSAGE_MAP()
 
 
@@ -717,10 +715,16 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 				if (uOutputPower >= m_uPwrAlertThreshold)
 				{
 					SetDlgItemText(IDC_POWERALARM, _T("POWER!"));
+					if (!m_fAlertIssued)
+					{
+						MessageBeep(MB_ICONERROR);
+						m_fAlertIssued = true;
+					}
 				}
 				else
 				{
 					SetDlgItemText(IDC_POWERALARM, _T(""));
+					m_fAlertIssued = false;
 				}
 			}
 			break;
@@ -915,15 +919,4 @@ void CHardplace7760Dlg::OnDestroy()
 	GetWindowPlacement(&wp);
 	theApp.WriteProfileBinary(_T("Settings"), _T("Window"), (LPBYTE)&wp, wp.length);
 	//theApp.WriteProfileInt(_T("Settings"), _T("OnTop"), (GetWindowLong(GetSafeHwnd(), GWL_EXSTYLE) & WS_EX_TOPMOST) != 0 ? 1 : 0);
-}
-
-HBRUSH CHardplace7760Dlg::OnCtlColor(CDC* pDC, CWnd* pWnd, UINT nCtlColor)
-{
-	if (nCtlColor == CTLCOLOR_STATIC
-		&& pWnd->GetSafeHwnd() == GetDlgItem(IDC_POWERALARM)->GetSafeHwnd())
-	{
-		pDC->SetTextColor(RGB(255, 0, 0));
-		return (HBRUSH)GetStockObject(NULL_BRUSH);
-	}
-	return CDialog::OnCtlColor(pDC, pWnd, nCtlColor);
 }
