@@ -53,7 +53,7 @@ END_MESSAGE_MAP()
 CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_HARDPLACE_7760_DIALOG, pParent),
 	m_FreqInput1(0), m_FreqInput2(0)
-	, m_iRFLevel(-1), m_uPower(0)
+	, m_iRFLevel(-1), m_uPower(0), m_DataMode(0), m_uFilterWidth(0)
 	, m_uPwrAlertThreshold(theApp.GetProfileInt(_T("Settings"), _T("PowerAlarmThreshold"), 0xFFFF))
 	, m_fAlertIssued(false), m_fPlacementSet(false)
 	, m_Amp(-1)
@@ -65,6 +65,7 @@ CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_PowerSetting, sizeof m_PW2_PowerSetting));
 	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_PowerOut, sizeof m_PW2_PowerOut));
 	m_IC_7760_PollQueue.Add(std::make_pair(m_IC7760_RFLevel, sizeof m_IC7760_RFLevel));
+	m_IC_7760_PollQueue.Add(std::make_pair(m_IC7760DataFilter, sizeof m_IC7760DataFilter));
 }
 
 void CHardplace7760Dlg::DoDataExchange(CDataExchange* pDX)
@@ -709,25 +710,22 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 			switch (m_IC_PW2_RcvBuf[5])
 			{
 			case 0x11:
-			{
-				unsigned uOutputPower((m_IC_PW2_RcvBuf[6] << 8) | m_IC_PW2_RcvBuf[7]);
-
-				if (uOutputPower >= m_uPwrAlertThreshold)
+				if (m_DataMode != 0
+					&& unsigned((m_IC_PW2_RcvBuf[6] << 8) | m_IC_PW2_RcvBuf[7]) >= m_uPwrAlertThreshold)
 				{
-					SetDlgItemText(IDC_POWERALARM, _T("POWER!"));
 					if (!m_fAlertIssued)
 					{
+						SetDlgItemText(IDC_POWERALARM, _T("POWER!"));
 						MessageBeep(MB_ICONERROR);
 						m_fAlertIssued = true;
 					}
 				}
-				else
+				else if (m_fAlertIssued)
 				{
 					SetDlgItemText(IDC_POWERALARM, _T(""));
 					m_fAlertIssued = false;
 				}
-			}
-			break;
+				break;
 
 			default:
 				break;
@@ -791,7 +789,7 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 				UpdateData(FALSE);
 			}
 			break;
-		
+
 		default:
 			break;
 		}
@@ -868,6 +866,19 @@ void CHardplace7760Dlg::onIC_7760Packet()
 			}
 			break;
 
+		case 0x1A:
+			switch (m_IC_7760_RcvBuf[5])
+			{
+			case 0x06:
+				m_DataMode = m_IC_7760_RcvBuf[6];
+				m_uFilterWidth = m_IC_7760_RcvBuf[7];
+				break;
+
+			default:
+				break;
+			}
+			break;
+
 		case 0xFA:
 			if (m_PwrOn != 1
 				|| m_Amp != -1
@@ -879,6 +890,7 @@ void CHardplace7760Dlg::onIC_7760Packet()
 				m_uPower = 0;
 				m_PwrOn = 1;
 				m_PwrCtrl.SetPos(m_PwrCtrl.GetRangeMax());
+				SetDlgItemText(IDC_FREQUENCY, _T(""));
 				UpdateData(FALSE);
 			}
 			break;
