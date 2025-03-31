@@ -694,16 +694,19 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 		switch (m_IC_PW2_RcvBuf[4])
 		{
 		case 0:
-			m_FreqInput1 = bcd2uint8_t(m_IC_PW2_RcvBuf[5]);   // Hz
-			m_FreqInput1 += 100 * bcd2uint8_t(m_IC_PW2_RcvBuf[6]);   // 100Hz
-			m_FreqInput1 += 10000 * bcd2uint8_t(m_IC_PW2_RcvBuf[7]);   // 10 kHz
-			m_FreqInput1 += 1000000 * bcd2uint8_t(m_IC_PW2_RcvBuf[8]);   // 1 MHz
-			m_FreqInput1 += 100000000 * bcd2uint8_t(m_IC_PW2_RcvBuf[9]);   // 100 MHz
+			if (m_IC_PW2_RcvBuf.GetCount() == 11)
+			{
+				m_FreqInput1 = bcd2uint8_t(m_IC_PW2_RcvBuf[5]);   // Hz
+				m_FreqInput1 += 100 * bcd2uint8_t(m_IC_PW2_RcvBuf[6]);   // 100Hz
+				m_FreqInput1 += 10000 * bcd2uint8_t(m_IC_PW2_RcvBuf[7]);   // 10 kHz
+				m_FreqInput1 += 1000000 * bcd2uint8_t(m_IC_PW2_RcvBuf[8]);   // 1 MHz
+				m_FreqInput1 += 100000000 * bcd2uint8_t(m_IC_PW2_RcvBuf[9]);   // 100 MHz
 
-			textVal.Format(szFreqFmt,
-				m_FreqInput1 / 1000000, (m_FreqInput1 % 1000000) / 1000, (m_FreqInput1 % 1000) / 10,
-				m_FreqInput2 / 1000000, (m_FreqInput2 % 1000000) / 1000, (m_FreqInput2 % 1000) / 10);
-			SetDlgItemText(IDC_FREQUENCY, textVal);
+				textVal.Format(szFreqFmt,
+					m_FreqInput1 / 1000000, (m_FreqInput1 % 1000000) / 1000, (m_FreqInput1 % 1000) / 10,
+					m_FreqInput2 / 1000000, (m_FreqInput2 % 1000000) / 1000, (m_FreqInput2 % 1000) / 10);
+				SetDlgItemText(IDC_FREQUENCY, textVal);
+			}
 			break;
 
 		case 0x15:
@@ -747,7 +750,9 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 			switch (m_IC_PW2_RcvBuf[5])
 			{
 			case 0x09:
-				if (m_Amp != m_IC_PW2_RcvBuf[6]) {
+				if (m_IC_PW2_RcvBuf.GetCount() == 8
+					&& m_Amp != m_IC_PW2_RcvBuf[6])
+				{
 					// TRACE("Amp Response\n");
 					m_Amp = m_IC_PW2_RcvBuf[6];
 					UpdateData(FALSE);
@@ -755,7 +760,8 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 				break;
 
 			case 0x0A:
-				if (m_MaxPower != m_IC_PW2_RcvBuf[6])
+				if (m_IC_PW2_RcvBuf.GetCount() == 8
+					&& m_MaxPower != m_IC_PW2_RcvBuf[6])
 				{
 					//TRACE("Power Response\n");
 					m_MaxPower = m_IC_PW2_RcvBuf[6];
@@ -772,16 +778,19 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 			switch (m_IC_PW2_RcvBuf[5])
 			{
 			case 3:
-				m_FreqInput2 = bcd2uint8_t(m_IC_PW2_RcvBuf[6]);   // Hz
-				m_FreqInput2 += 100 * bcd2uint8_t(m_IC_PW2_RcvBuf[7]);   // 100Hz
-				m_FreqInput2 += 10000 * bcd2uint8_t(m_IC_PW2_RcvBuf[8]);   // 10 kHz
-				m_FreqInput2 += 1000000 * bcd2uint8_t(m_IC_PW2_RcvBuf[9]);  // 1 MHz
-				m_FreqInput2 += 100000000 * bcd2uint8_t(m_IC_PW2_RcvBuf[10]);   // 100 MHz
+				if (m_IC_PW2_RcvBuf.GetCount() == 12)
+				{
+					m_FreqInput2 = bcd2uint8_t(m_IC_PW2_RcvBuf[6]);   // Hz
+					m_FreqInput2 += 100 * bcd2uint8_t(m_IC_PW2_RcvBuf[7]);   // 100Hz
+					m_FreqInput2 += 10000 * bcd2uint8_t(m_IC_PW2_RcvBuf[8]);   // 10 kHz
+					m_FreqInput2 += 1000000 * bcd2uint8_t(m_IC_PW2_RcvBuf[9]);  // 1 MHz
+					m_FreqInput2 += 100000000 * bcd2uint8_t(m_IC_PW2_RcvBuf[10]);   // 100 MHz
 
-				textVal.Format(szFreqFmt,
-					m_FreqInput1 / 1000000, (m_FreqInput1 % 1000000) / 1000, (m_FreqInput1 % 1000) / 10,
-					m_FreqInput2 / 1000000, (m_FreqInput2 % 1000000) / 1000, (m_FreqInput2 % 1000) / 10);
-				SetDlgItemText(IDC_FREQUENCY, textVal);
+					textVal.Format(szFreqFmt,
+						m_FreqInput1 / 1000000, (m_FreqInput1 % 1000000) / 1000, (m_FreqInput1 % 1000) / 10,
+						m_FreqInput2 / 1000000, (m_FreqInput2 % 1000000) / 1000, (m_FreqInput2 % 1000) / 10);
+					SetDlgItemText(IDC_FREQUENCY, textVal);
+				}
 				break;
 
 			default:
@@ -829,48 +838,49 @@ void CHardplace7760Dlg::onIC_7760Packet()
 			switch (m_IC_7760_RcvBuf[5])
 			{
 			case 0x0A:
-			{
-				// TRACE("RF Level\n");
-				unsigned uPower(0);
-				unsigned uMultiplier(1);
-
-				for (size_t nIndex(static_cast<size_t>(m_IC_7760_RcvBuf.GetCount()) - 2); nIndex >= 6; nIndex--)
+				if (m_IC_7760_RcvBuf.GetCount() == 9)
 				{
-					uPower += bcd2uint8_t(m_IC_7760_RcvBuf[nIndex]) * uMultiplier;
-					uMultiplier *= 100;
-				}
-				if (m_uPower != uPower)
-				{
-					m_PwrCtrl.SetPos(m_PwrCtrl.GetRangeMax() - int(uPower));
+					// TRACE("RF Level\n");
+					unsigned uPower(0);
+					unsigned uMultiplier(1);
 
-					CString szRfLevel;
-					szRfLevel.Format(_T("RF Level: %01uW"), static_cast<unsigned>(static_cast<float>(uPower) / 1.275));
-					SetDlgItemText(IDC_RFLEVEL, szRfLevel);
-
-					switch (uPower)
+					for (size_t nIndex(static_cast<size_t>(m_IC_7760_RcvBuf.GetCount()) - 2); nIndex >= 6; nIndex--)
 					{
-					case 64:
-						m_iRFLevel = 0;
-						break;
-					case 128:
-						m_iRFLevel = 1;
-						break;
-					case 192:
-						m_iRFLevel = 2;
-						break;
-					case 255:
-						m_iRFLevel = 3;
-						break;
-					default:
-						m_iRFLevel = -1;
-						break;
+						uPower += bcd2uint8_t(m_IC_7760_RcvBuf[nIndex]) * uMultiplier;
+						uMultiplier *= 100;
 					}
-					m_PwrOn = 0;
-					UpdateData(FALSE);
+					if (m_uPower != uPower)
+					{
+						m_PwrCtrl.SetPos(m_PwrCtrl.GetRangeMax() - int(uPower));
+
+						CString szRfLevel;
+						szRfLevel.Format(_T("RF Level: %01uW"), static_cast<unsigned>(static_cast<float>(uPower) / 1.275));
+						SetDlgItemText(IDC_RFLEVEL, szRfLevel);
+
+						switch (uPower)
+						{
+						case 64:
+							m_iRFLevel = 0;
+							break;
+						case 128:
+							m_iRFLevel = 1;
+							break;
+						case 192:
+							m_iRFLevel = 2;
+							break;
+						case 255:
+							m_iRFLevel = 3;
+							break;
+						default:
+							m_iRFLevel = -1;
+							break;
+						}
+						m_PwrOn = 0;
+						UpdateData(FALSE);
+					}
+					m_uPower = uPower;
 				}
-				m_uPower = uPower;
-			}
-			break;
+				break;
 
 			default:
 				break;
@@ -881,8 +891,11 @@ void CHardplace7760Dlg::onIC_7760Packet()
 			switch (m_IC_7760_RcvBuf[5])
 			{
 			case 0x06:
-				m_DataMode = m_IC_7760_RcvBuf[6];
-				m_uFilterWidth = m_IC_7760_RcvBuf[7];
+				if (m_IC_7760_RcvBuf.GetCount() == 9)
+				{
+					m_DataMode = m_IC_7760_RcvBuf[6];
+					m_uFilterWidth = m_IC_7760_RcvBuf[7];
+				}
 				break;
 
 			default:
