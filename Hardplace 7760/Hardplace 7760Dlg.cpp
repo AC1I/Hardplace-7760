@@ -710,9 +710,20 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 			switch (m_IC_PW2_RcvBuf[5])
 			{
 			case 0x11:
-				if (m_DataMode != 0
-					&& unsigned((m_IC_PW2_RcvBuf[6] << 8) | m_IC_PW2_RcvBuf[7]) >= m_uPwrAlertThreshold)
+				if (m_IC_PW2_RcvBuf.GetCount() == 9
+					&& m_DataMode != 0
+					&& unsigned(MAKEWORD(m_IC_PW2_RcvBuf[7], m_IC_PW2_RcvBuf[6])) >= m_uPwrAlertThreshold)
 				{
+					//CString szDebug;
+					//for (INT_PTR stIndex(0); stIndex < m_IC_PW2_RcvBuf.GetCount(); stIndex++)
+					//{
+					//	CString szOctet;
+					//	szOctet.Format(_T("0x%02X "), unsigned(m_IC_PW2_RcvBuf[stIndex]));
+					//	szDebug += szOctet;
+					//}
+					//szDebug.TrimRight();
+					//szDebug += _T("\n");
+					//OutputDebugString(szDebug);
 					if (!m_fAlertIssued)
 					{
 						SetDlgItemText(IDC_POWERALARM, _T("POWER!"));
