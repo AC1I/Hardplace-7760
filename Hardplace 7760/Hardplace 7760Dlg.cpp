@@ -310,6 +310,9 @@ void CHardplace7760Dlg::OnPW2ComOpen()
 		{
 			m_IC_PW2_Serial.Close();
 			SetDlgItemText(IDC_PW2_COM_OPEN, _T("Open"));
+			m_MaxPower = -1;
+			m_Amp = -1;
+			UpdateData(FALSE);
 		}
 		else
 		{
@@ -329,7 +332,13 @@ void CHardplace7760Dlg::On7760ComOpen()
 		if (m_IC_7760_Serial.IsOpen())
 		{
 			m_IC_7760_Serial.Close();
-			SetDlgItemText(IDC_7760_COM_OPEN, _T("Close"));
+			SetDlgItemText(IDC_7760_COM_OPEN, _T("Open"));
+			SetDlgItemText(IDC_RFLEVEL, _T("RF Level:"));
+			m_iRFLevel = -1;
+			m_uPower = 0;
+			m_PwrOn = -1;
+			m_PwrCtrl.SetPos(m_PwrCtrl.GetRangeMax());
+			UpdateData(FALSE);
 		}
 		else
 		{
@@ -1004,7 +1013,7 @@ void CHardplace7760Dlg::onIC_7760Packet()
 				m_Amp = -1;
 				m_MaxPower = -1;
 				m_uPower = 0;
-				m_PwrOn = -1;
+				m_PwrOn = 1;
 				m_PwrCtrl.SetPos(m_PwrCtrl.GetRangeMax());
 				SetDlgItemText(IDC_FREQUENCY, _T(""));
 				UpdateData(FALSE);
