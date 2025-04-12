@@ -36,7 +36,10 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
 	const UINT_PTR m_idTimerEvent = 1;
+	const UINT_PTR m_idTunerEvent = 2;
 	const UINT m_TimerInterval = 250;
+	const UINT m_TunerTimeout;
+	const bool m_TunerMonitorSWR;
 	CSerialPort m_IC_PW2_Serial;
 	CSerialPort m_IC_7760_Serial;
 	CArray<uint8_t> m_IC_PW2_RcvBuf;
@@ -53,14 +56,28 @@ protected:
 	const unsigned m_uPwrAlertThreshold;
 	bool m_fAlertIssued;
 	bool m_fPlacementSet;
+	bool m_fTuning;
+	uint8_t m_uBand;
+	uint8_t m_uOperatingMode;
+	uint8_t m_uDataMode;
+	uint8_t m_uFilter;
 	CComboBox m_IC_PW2_Port;
 	CComboBox m_IC_7760_Port;
+
 	const uint8_t m_PW2_AmpSetting[7] = { 0xFE, 0xFE, 0xAA, 0xE0, 0x1A, 0x09, 0xFD };
 	const uint8_t m_PW2_PowerSetting[7] = { 0xFE, 0xFE, 0xAA, 0xE0, 0x1A, 0x0A, 0xFD };
 	const uint8_t m_PW2_PowerOut[7] = { 0xFE, 0xFE, 0xAA, 0xE0, 0x15, 0x11, 0xFD };
+
+	uint8_t m_IC7760LastCommand[32];
 	const uint8_t m_IC7760_RFLevel[7] = { 0xFE, 0xFE, 0xB2, 0xE0, 0x14, 0x0A, 0xFD };
 	const uint8_t m_IC7760DataFilter[7] = { 0xFE, 0xFE, 0xB2, 0xE0, 0x1A, 0x06, 0xFD };
 	uint8_t m_IC7760SetPower[9] = { 0xFE, 0xFE, 0xB2, 0xE0, 0x14, 0x0A, 0x02, 0x55, 0xFD };
+	const uint8_t m_IC7760SplitSetting[6] = { 0xFE, 0xFE, 0xB2, 0xE0, 0x0F, 0xFD };
+	uint8_t m_IC7760OperatingMode[7] = { 0xFE, 0xFE, 0xB2, 0xE0, 0x26, 0x00, 0xFD };
+	uint8_t m_IC7760OperatingModeCmd[10] = { 0xFE, 0xFE, 0xB2, 0xE0, 0x26, 0x00, 0x00, 0x00, 0x00, 0xFD };
+	uint8_t m_IC7760Transmit[8] = { 0xFE, 0xFE, 0xB2, 0xE0, 0x1C, 0x00, 0x00, 0xFD };
+	const uint8_t m_IC7760SWR[7] = { 0xFE, 0xFE, 0xB2, 0xE0, 0x15, 0x12, 0xFD };
+
 	CSliderCtrl m_PwrCtrl;
 	CStatic m_Frequency;
 	int m_iRFLevel;
@@ -82,14 +99,31 @@ protected:
 	afx_msg void OnClickedMaxPower(UINT nId);
 	afx_msg void OnClickedRFLevel(UINT nId);
 	afx_msg void OnClickedPower(UINT nId);
+	afx_msg void OnClickedTune();
 
 	bool OpenCommPort(int iPort, CSerialPort& Port, bool fQuiet = false);
 	void onSerialException(CSerialException& ex, CSerialPort& Port);
+	DWORD OctetsBuffered(HANDLE hPort);
 	void onIC_PW2Packet();
 	void onIC_7760Packet();
 
 	uint8_t bcd2uint8_t(uint8_t uchBCD_Digit)
 	{
 		return (uchBCD_Digit & 0x0f) + ((uchBCD_Digit >> 4) * 10);
+	}
+
+	void TracePacket(const LPTSTR lpPrefix, CArray<uint8_t> &rPacket)
+	{
+		CString Debug(lpPrefix);
+
+		for (int nIndex(0); nIndex < rPacket.GetCount(); nIndex++)
+		{
+			CString szOctet;
+			szOctet.Format(_T("0x%02X "), rPacket[nIndex]);
+			Debug += szOctet;
+		}
+		Debug.TrimRight();
+		Debug += _T("\n");
+		TRACE(Debug);
 	}
 };

@@ -54,12 +54,15 @@ CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_HARDPLACE_7760_DIALOG, pParent),
 	m_FreqInput1(0), m_FreqInput2(0)
 	, m_iRFLevel(-1), m_uPower(0), m_DataMode(0), m_uFilterWidth(0)
+	, m_TunerTimeout(theApp.GetProfileInt(_T("Settings"), _T("TunerTimeout"), 1000 * 5))
+	, m_TunerMonitorSWR(theApp.GetProfileInt(_T("Settings"), _T("TunerMonitorSWR"), false))
 	, m_uPwrAlertThreshold(theApp.GetProfileInt(_T("Settings"), _T("PowerAlarmThreshold"), 0xFFFF))
-	, m_fAlertIssued(false), m_fPlacementSet(false)
+	, m_fAlertIssued(false), m_fPlacementSet(false), m_fTuning(false)
 	, m_Amp(-1)
 	, m_MaxPower(-1)
 	, m_PwrOn(-1)
 {
+	memset(m_IC7760LastCommand, '\0', sizeof m_IC7760LastCommand);
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_AmpSetting, sizeof m_PW2_AmpSetting));
 	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_PowerSetting, sizeof m_PW2_PowerSetting));
@@ -96,6 +99,7 @@ BEGIN_MESSAGE_MAP(CHardplace7760Dlg, CDialogEx)
 	ON_WM_VSCROLL()
 	ON_WM_SHOWWINDOW()
 	ON_WM_DESTROY()
+	ON_BN_CLICKED(IDC_TUNE, &CHardplace7760Dlg::OnClickedTune)
 END_MESSAGE_MAP()
 
 
@@ -334,6 +338,10 @@ void CHardplace7760Dlg::On7760ComOpen()
 
 bool CHardplace7760Dlg::OpenCommPort(int iPort, CSerialPort& Port, bool fQuiet)
 {
+	if (Port == m_IC_7760_Serial)
+	{
+		m_fTuning = false;
+	}
 	try
 	{
 		if (!Port.IsOpen())
@@ -385,6 +393,10 @@ void CHardplace7760Dlg::onSerialException(CSerialException& ex, CSerialPort& Por
 		{
 			Port.Close();
 		}
+		if (Port == m_IC_7760_Serial)
+		{
+			m_fTuning = false;
+		}
 	}
 	catch (CSerialException ex)
 	{
@@ -392,20 +404,29 @@ void CHardplace7760Dlg::onSerialException(CSerialException& ex, CSerialPort& Por
 	AfxMessageBox(achErrorStr);
 }
 
+DWORD CHardplace7760Dlg::OctetsBuffered(HANDLE hPort)
+{
+	DWORD dwAvailable(0);
+	DWORD dwErrors;
+	COMSTAT Status;
+
+	if (ClearCommError(hPort, &dwErrors, &Status))
+	{
+		dwAvailable = Status.cbInQue;
+	}
+	return dwAvailable;
+}
+
 void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 {
-	// TODO: Add your message handler code here and/or call default
 	if (nIDEvent == m_idTimerEvent)
 	{
 		if (m_IC_PW2_Serial.IsOpen())
 		{
-			DWORD dwAvailable(0);
-			DWORD dwErrors;
-			COMSTAT Status;
-
-			if (ClearCommError(HANDLE(m_IC_PW2_Serial), &dwErrors, &Status))
+			DWORD dwAvailable(OctetsBuffered(HANDLE(m_IC_PW2_Serial)));
+			
+			if (dwAvailable)
 			{
-				dwAvailable = Status.cbInQue;
 				for (uint8_t uchByte(0); dwAvailable; dwAvailable--)
 				{
 					try
@@ -459,13 +480,10 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 		}
 		if (m_IC_7760_Serial.IsOpen())
 		{
-			DWORD dwAvailable(0);
-			DWORD dwErrors;
-			COMSTAT Status;
+			DWORD dwAvailable(OctetsBuffered(HANDLE(m_IC_7760_Serial)));
 
-			if (ClearCommError(HANDLE(m_IC_7760_Serial), &dwErrors, &Status))
+			if (dwAvailable)
 			{
-				dwAvailable = Status.cbInQue;
 				for (uint8_t uchByte(0); dwAvailable; dwAvailable--)
 				{
 					try
@@ -489,6 +507,7 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 				// Transmit here
 				if (!m_IC_7760_XmtQueue.IsEmpty())
 				{
+					memcpy(m_IC7760LastCommand, m_IC_7760_XmtQueue[0].first, m_IC_7760_XmtQueue[0].second);
 					try
 					{
 						m_IC_7760_Serial.Write(m_IC_7760_XmtQueue[0].first, DWORD(m_IC_7760_XmtQueue[0].second));
@@ -502,6 +521,7 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 				}
 				else if (!m_IC_7760_PollQueue.IsEmpty())
 				{
+					memcpy(m_IC7760LastCommand, m_IC_7760_PollQueue[0].first, m_IC_7760_PollQueue[0].second);
 					try
 					{
 						m_IC_7760_Serial.Write(m_IC_7760_PollQueue[0].first, DWORD(m_IC_7760_PollQueue[0].second));
@@ -511,11 +531,26 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 					catch (CSerialException ex) {
 						onSerialException(ex, m_IC_7760_Serial);
 						m_IC_7760_RcvBuf.RemoveAll();
-						m_IC_7760_XmtQueue.RemoveAll();
+						m_IC_7760_PollQueue.RemoveAll();
 					}
 				}
 			}
 		}
+	}
+	else if (nIDEvent == m_idTunerEvent)
+	{
+		m_fTuning = false;
+
+		m_IC7760Transmit[6] = 0x00;
+		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760Transmit, sizeof m_IC7760Transmit));
+
+		m_IC7760OperatingModeCmd[5] = m_uBand;
+		m_IC7760OperatingModeCmd[6] = m_uOperatingMode;
+		m_IC7760OperatingModeCmd[7] = m_uDataMode;
+		m_IC7760OperatingModeCmd[8] = m_uFilter;
+		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760OperatingModeCmd, sizeof m_IC7760OperatingModeCmd));
+
+		KillTimer(m_idTunerEvent);
 	}
 
 	CDialogEx::OnTimer(nIDEvent);
@@ -645,6 +680,11 @@ void CHardplace7760Dlg::OnClickedPower(UINT nId)
 	default:
 		break;
 	}
+}
+
+void CHardplace7760Dlg::OnClickedTune()
+{
+	m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760SplitSetting, sizeof m_IC7760SplitSetting));
 }
 
 void CHardplace7760Dlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
@@ -834,6 +874,11 @@ void CHardplace7760Dlg::onIC_7760Packet()
 	{
 		switch (m_IC_7760_RcvBuf[4])
 		{
+		case 0x0F:
+			m_IC7760OperatingMode[5] = m_IC_7760_RcvBuf[5];
+			m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760OperatingMode, sizeof m_IC7760OperatingMode));
+			break;
+
 		case 0x14:
 			switch (m_IC_7760_RcvBuf[5])
 			{
@@ -887,6 +932,29 @@ void CHardplace7760Dlg::onIC_7760Packet()
 			}
 			break;
 
+		case 0x15:
+			switch (m_IC_7760_RcvBuf[5])
+			{
+			case 0x12: // SWR
+				if (m_IC_7760_RcvBuf[6] == 0x00 && m_IC_7760_RcvBuf[7] <= 0x48) // <= 1.5
+				{
+#if 0
+					TracePacket(_T("SWR:"), m_IC_7760_RcvBuf);
+#else
+					OnTimer(m_idTunerEvent); // Stop Tuning
+#endif
+				}
+				else
+				{
+					m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760SWR, sizeof m_IC7760SWR));
+				}
+				break;
+
+			default:
+				break;
+			}
+			break;
+
 		case 0x1A:
 			switch (m_IC_7760_RcvBuf[5])
 			{
@@ -903,7 +971,24 @@ void CHardplace7760Dlg::onIC_7760Packet()
 			}
 			break;
 
-		case 0xFA:
+		case 0x26: // Operating Mode
+			m_uBand = m_IC_7760_RcvBuf[5];
+			m_uOperatingMode = m_IC_7760_RcvBuf[6];
+			m_uDataMode = m_IC_7760_RcvBuf[7];
+			m_uFilter = m_IC_7760_RcvBuf[8];
+
+			m_fTuning = true;
+
+			m_IC7760OperatingModeCmd[5] = m_IC_7760_RcvBuf[5];
+			m_IC7760OperatingModeCmd[6] = 0x04; // RTTY
+			m_IC7760OperatingModeCmd[7] = 0x00; // Data Mode off
+			m_IC7760OperatingModeCmd[8] = m_IC_7760_RcvBuf[8];
+			m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760OperatingModeCmd, sizeof m_IC7760OperatingModeCmd));
+
+			SetTimer(m_idTunerEvent, m_TunerTimeout, NULL);
+			break;
+
+		case 0xFA: // NG Response
 			if (m_PwrOn != 1
 				|| m_Amp != -1
 				|| m_iRFLevel != -1)
@@ -912,10 +997,43 @@ void CHardplace7760Dlg::onIC_7760Packet()
 				m_Amp = -1;
 				m_MaxPower = -1;
 				m_uPower = 0;
-				m_PwrOn = 1;
+				m_PwrOn = -1;
 				m_PwrCtrl.SetPos(m_PwrCtrl.GetRangeMax());
 				SetDlgItemText(IDC_FREQUENCY, _T(""));
 				UpdateData(FALSE);
+			}
+			m_fTuning = false;
+			break;
+
+		case 0xFB: // OK response
+			switch (m_IC7760LastCommand[4])
+			{
+			case 0x1C:
+				switch (m_IC7760LastCommand[5])
+				{
+				case 0x00: // Transmit
+					if (m_TunerMonitorSWR
+						&& m_IC7760LastCommand[6] != 0x00)
+					{
+						m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760SWR, sizeof m_IC7760SWR));
+					}
+					break;
+
+				default:
+					break;
+				}
+				break;
+
+			case 0x26: // operating mode
+				if (m_fTuning)
+				{
+					m_IC7760Transmit[6] = 0x01;
+					m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760Transmit, sizeof m_IC7760Transmit));
+				}
+				break;
+
+			default:
+				break;
 			}
 			break;
 
