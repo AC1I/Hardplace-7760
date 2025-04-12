@@ -51,8 +51,8 @@ END_MESSAGE_MAP()
 
 
 CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
-	: CDialogEx(IDD_HARDPLACE_7760_DIALOG, pParent),
-	m_FreqInput1(0), m_FreqInput2(0)
+	: CDialogEx(IDD_HARDPLACE_7760_DIALOG, pParent)
+	, m_FreqInput1(0), m_FreqInput2(0)
 	, m_iRFLevel(-1), m_uPower(0), m_DataMode(0), m_uFilterWidth(0)
 	, m_TunerTimeout(theApp.GetProfileInt(_T("Settings"), _T("TunerTimeout"), 1000 * 5))
 	, m_TunerMonitorSWR(theApp.GetProfileInt(_T("Settings"), _T("TunerMonitorSWR"), false))
@@ -62,6 +62,13 @@ CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	, m_MaxPower(-1)
 	, m_PwrOn(-1)
 {
+	if (theApp.GetProfileInt(_T("Settings"), _T("IC_PW2_Port"), 0) == 0
+		&& theApp.GetProfileInt(_T("Settings"), _T("IC_7760_Port"), 0) == 0)
+	{
+		theApp.WriteProfileInt(_T("Settings"), _T("TunerTimeout"), m_TunerTimeout);
+		theApp.WriteProfileInt(_T("Settings"), _T("TunerMonitorSWR"), m_TunerMonitorSWR);
+		theApp.WriteProfileInt(_T("Settings"), _T("PowerAlarmThreshold"), m_uPwrAlertThreshold);
+	}
 	memset(m_IC7760LastCommand, '\0', sizeof m_IC7760LastCommand);
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_AmpSetting, sizeof m_PW2_AmpSetting));
