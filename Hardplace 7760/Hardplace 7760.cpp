@@ -70,6 +70,13 @@ BOOL CHardplace7760App::InitInstance()
 	// TODO: You should modify this string to be something appropriate
 	// such as the name of your company or organization
 	SetRegistryKey(_T("AC1I"));
+	if (GetProfileInt(_T("Settings"), _T("IC_PW2_Port"), 0) == 0
+		&& GetProfileInt(_T("Settings"), _T("IC_7760_Port"), 0) == 0)
+	{
+		WriteProfileInt(_T("Settings"), _T("TunerTimeout"), 5);
+		WriteProfileInt(_T("Settings"), _T("TunerMonitorSWR"), true);
+		WriteProfileInt(_T("Settings"), _T("PowerAlarmThreshold"), 0xFFFF);
+	}
 
 	CHardplace7760Dlg dlg;
 	m_pMainWnd = &dlg;

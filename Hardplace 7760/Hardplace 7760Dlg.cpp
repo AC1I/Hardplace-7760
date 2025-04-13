@@ -62,13 +62,6 @@ CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	, m_MaxPower(-1)
 	, m_PwrOn(-1)
 {
-	if (theApp.GetProfileInt(_T("Settings"), _T("IC_PW2_Port"), 0) == 0
-		&& theApp.GetProfileInt(_T("Settings"), _T("IC_7760_Port"), 0) == 0)
-	{
-		theApp.WriteProfileInt(_T("Settings"), _T("TunerTimeout"), m_TunerTimeout);
-		theApp.WriteProfileInt(_T("Settings"), _T("TunerMonitorSWR"), m_TunerMonitorSWR);
-		theApp.WriteProfileInt(_T("Settings"), _T("PowerAlarmThreshold"), m_uPwrAlertThreshold);
-	}
 	memset(m_IC7760LastCommand, '\0', sizeof m_IC7760LastCommand);
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_AmpSetting, sizeof m_PW2_AmpSetting));
@@ -579,19 +572,13 @@ void CHardplace7760Dlg::OnClickedAmp(UINT nId)
 	switch (m_Amp)
 	{
 	case 0:
-	{
-		static const uint8_t auchCmd[] = { 0xFE, 0xFE, 0xAA, 0xE0, 0x1A, 0x09, 0x00, 0xFD };
-
-		m_IC_PW2_XmtQueue.Add(std::make_pair(auchCmd, sizeof auchCmd));
-	}
+		m_PW2_AmpCmd[6] = 0x00;
+		m_IC_PW2_XmtQueue.Add(std::make_pair(m_PW2_AmpCmd, sizeof m_PW2_AmpCmd));
 	break;
 
 	case 1:
-	{
-		static const uint8_t auchCmd[] = { 0xFE, 0xFE, 0xAA, 0xE0, 0x1A, 0x09, 0x01, 0xFD };
-
-		m_IC_PW2_XmtQueue.Add(std::make_pair(auchCmd, sizeof auchCmd));
-	}
+		m_PW2_AmpCmd[6] = 0x01;
+		m_IC_PW2_XmtQueue.Add(std::make_pair(m_PW2_AmpCmd, sizeof m_PW2_AmpCmd));
 	break;
 
 	default:
@@ -606,19 +593,13 @@ void CHardplace7760Dlg::OnClickedMaxPower(UINT nId)
 	switch (m_MaxPower)
 	{
 	case 0:
-	{
-		static const uint8_t auchCmd[] = { 0xFE, 0xFE, 0xAA, 0xE0, 0x1A, 0x0A, 0x00, 0xFD };
-
-		m_IC_PW2_XmtQueue.Add(std::make_pair(auchCmd, sizeof auchCmd));
-	}
+		m_PW2_MaxPwrCmd[6] = 0x00;
+		m_IC_PW2_XmtQueue.Add(std::make_pair(m_PW2_MaxPwrCmd, sizeof m_PW2_MaxPwrCmd));
 	break;
 
 	case 1:
-	{
-		static const uint8_t auchCmd[] = { 0xFE, 0xFE, 0xAA, 0xE0, 0x1A, 0x0A, 0x01, 0xFD };
-
-		m_IC_PW2_XmtQueue.Add(std::make_pair(auchCmd, sizeof auchCmd));
-	}
+		m_PW2_MaxPwrCmd[6] = 0x01;
+		m_IC_PW2_XmtQueue.Add(std::make_pair(m_PW2_MaxPwrCmd, sizeof m_PW2_MaxPwrCmd));
 	break;
 
 	default:
@@ -633,35 +614,27 @@ void CHardplace7760Dlg::OnClickedRFLevel(UINT nId)
 	switch (m_iRFLevel)
 	{
 	case 0:
-	{
-		static const uint8_t auchCmd[] = { 0xFE, 0xFE, 0xB2, 0xE0, 0x14, 0x0A, 0x00, 0x64, 0xFD };
-
-		m_IC_7760_XmtQueue.Add(std::make_pair(auchCmd, sizeof auchCmd));
-	}
+		m_IC7760RFLevelCmd[6] = 0x00;
+		m_IC7760RFLevelCmd[7] = 0x64;
+		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
 	break;
 
 	case 1:
-	{
-		static const uint8_t auchCmd[] = { 0xFE, 0xFE, 0xB2, 0xE0, 0x14, 0x0A, 0x01, 0x28, 0xFD };
-
-		m_IC_7760_XmtQueue.Add(std::make_pair(auchCmd, sizeof auchCmd));
-	}
+		m_IC7760RFLevelCmd[6] = 0x01;
+		m_IC7760RFLevelCmd[7] = 0x28;
+		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
 	break;
 
 	case 2:
-	{
-		static const uint8_t auchCmd[] = { 0xFE, 0xFE, 0xB2, 0xE0, 0x14, 0x0A, 0x01, 0x92, 0xFD };
-
-		m_IC_7760_XmtQueue.Add(std::make_pair(auchCmd, sizeof auchCmd));
-	}
+		m_IC7760RFLevelCmd[6] = 0x01;
+		m_IC7760RFLevelCmd[7] = 0x92;
+		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
 	break;
 
 	case 3:
-	{
-		static const uint8_t auchCmd[] = { 0xFE, 0xFE, 0xB2, 0xE0, 0x14, 0x0A, 0x02, 0x55, 0xFD };
-
-		m_IC_7760_XmtQueue.Add(std::make_pair(auchCmd, sizeof auchCmd));
-	}
+		m_IC7760RFLevelCmd[6] = 0x02;
+		m_IC7760RFLevelCmd[7] = 0x55;
+		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
 	break;
 
 	default:
@@ -678,19 +651,13 @@ void CHardplace7760Dlg::OnClickedPower(UINT nId)
 	switch (m_PwrOn)
 	{
 	case 0:
-	{
-		static const uint8_t auchCmd[] = { 0xFE, 0xFE, 0xB2, 0xE0, 0x18, 0x01, 0xFD };
-
-		m_IC_7760_XmtQueue.Add(std::make_pair(auchCmd, sizeof auchCmd));
-	}
+		m_IC7760PwrCmd[5] = 0x01;
+		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760PwrCmd, sizeof m_IC7760PwrCmd));
 	break;
 
 	case 1:
-	{
-		static const uint8_t auchCmd[] = { 0xFE, 0xFE, 0xB2, 0xE0, 0x18, 0x00, 0xFD };
-
-		m_IC_7760_XmtQueue.Add(std::make_pair(auchCmd, sizeof auchCmd));
-	}
+		m_IC7760PwrCmd[5] = 0x00;
+		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760PwrCmd, sizeof m_IC7760PwrCmd));
 	break;
 
 	default:
