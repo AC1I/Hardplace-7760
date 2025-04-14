@@ -273,6 +273,7 @@ void CHardplace7760Dlg::OnClose()
 	{
 		if (m_IC_PW2_Serial.IsOpen())
 		{
+			m_IC_PW2_Serial.Flush();
 			m_IC_PW2_Serial.Close();
 		}
 	}
@@ -284,6 +285,7 @@ void CHardplace7760Dlg::OnClose()
 	{
 		if (m_IC_7760_Serial.IsOpen())
 		{
+			m_IC_7760_Serial.Flush();
 			m_IC_7760_Serial.Close();
 		}
 	}
@@ -301,6 +303,7 @@ void CHardplace7760Dlg::OnPW2ComOpen()
 	{
 		if (m_IC_PW2_Serial.IsOpen())
 		{
+			m_IC_PW2_Serial.Flush();
 			m_IC_PW2_Serial.Close();
 			SetDlgItemText(IDC_PW2_COM_OPEN, _T("Open"));
 			m_MaxPower = -1;
@@ -324,6 +327,7 @@ void CHardplace7760Dlg::On7760ComOpen()
 	{
 		if (m_IC_7760_Serial.IsOpen())
 		{
+			m_IC_7760_Serial.Flush();
 			m_IC_7760_Serial.Close();
 			SetDlgItemText(IDC_7760_COM_OPEN, _T("Open"));
 			SetDlgItemText(IDC_RFLEVEL, _T("RF Level:"));
