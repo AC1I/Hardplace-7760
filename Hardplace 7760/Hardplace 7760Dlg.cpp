@@ -67,6 +67,7 @@ CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_AmpSetting, sizeof m_PW2_AmpSetting));
 	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_PowerSetting, sizeof m_PW2_PowerSetting));
 	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_PowerOut, sizeof m_PW2_PowerOut));
+	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_SWR, sizeof m_PW2_SWR));
 	m_IC_7760_PollQueue.Add(std::make_pair(m_IC7760_RFLevel, sizeof m_IC7760_RFLevel));
 	m_IC_7760_PollQueue.Add(std::make_pair(m_IC7760DataFilter, sizeof m_IC7760DataFilter));
 }
@@ -135,7 +136,7 @@ BOOL CHardplace7760Dlg::OnInitDialog()
 	SetIcon(m_hIcon, FALSE);		// Set small icon
 
 	SetDlgItemText(IDC_FREQUENCY, _T(""));
-	SetDlgItemText(IDC_POWERALARM, _T(""));
+	SetDlgItemText(IDC_INFO, _T(""));
 
 	m_PwrCtrl.SetRange(0, 255);
 	m_PwrCtrl.SetPageSize(m_PwrCtrl.GetRangeMax() / 10);
@@ -437,7 +438,7 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 		if (m_IC_PW2_Serial.IsOpen())
 		{
 			DWORD dwAvailable(OctetsBuffered(HANDLE(m_IC_PW2_Serial)));
-			
+
 			if (dwAvailable)
 			{
 				for (uint8_t uchByte(0); dwAvailable; dwAvailable--)
@@ -583,12 +584,12 @@ void CHardplace7760Dlg::OnClickedAmp(UINT nId)
 	case 0:
 		m_PW2_AmpCmd[6] = 0x00;
 		m_IC_PW2_XmtQueue.Add(std::make_pair(m_PW2_AmpCmd, sizeof m_PW2_AmpCmd));
-	break;
+		break;
 
 	case 1:
 		m_PW2_AmpCmd[6] = 0x01;
 		m_IC_PW2_XmtQueue.Add(std::make_pair(m_PW2_AmpCmd, sizeof m_PW2_AmpCmd));
-	break;
+		break;
 
 	default:
 		break;
@@ -604,12 +605,12 @@ void CHardplace7760Dlg::OnClickedMaxPower(UINT nId)
 	case 0:
 		m_PW2_MaxPwrCmd[6] = 0x00;
 		m_IC_PW2_XmtQueue.Add(std::make_pair(m_PW2_MaxPwrCmd, sizeof m_PW2_MaxPwrCmd));
-	break;
+		break;
 
 	case 1:
 		m_PW2_MaxPwrCmd[6] = 0x01;
 		m_IC_PW2_XmtQueue.Add(std::make_pair(m_PW2_MaxPwrCmd, sizeof m_PW2_MaxPwrCmd));
-	break;
+		break;
 
 	default:
 		break;
@@ -626,25 +627,25 @@ void CHardplace7760Dlg::OnClickedRFLevel(UINT nId)
 		m_IC7760RFLevelCmd[6] = 0x00;
 		m_IC7760RFLevelCmd[7] = 0x64;
 		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
-	break;
+		break;
 
 	case 1:
 		m_IC7760RFLevelCmd[6] = 0x01;
 		m_IC7760RFLevelCmd[7] = 0x28;
 		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
-	break;
+		break;
 
 	case 2:
 		m_IC7760RFLevelCmd[6] = 0x01;
 		m_IC7760RFLevelCmd[7] = 0x92;
 		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
-	break;
+		break;
 
 	case 3:
 		m_IC7760RFLevelCmd[6] = 0x02;
 		m_IC7760RFLevelCmd[7] = 0x55;
 		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
-	break;
+		break;
 
 	default:
 		break;
@@ -662,12 +663,12 @@ void CHardplace7760Dlg::OnClickedPower(UINT nId)
 	case 0:
 		m_IC7760PwrCmd[5] = 0x01;
 		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760PwrCmd, sizeof m_IC7760PwrCmd));
-	break;
+		break;
 
 	case 1:
 		m_IC7760PwrCmd[5] = 0x00;
 		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760PwrCmd, sizeof m_IC7760PwrCmd));
-	break;
+		break;
 
 	default:
 		break;
@@ -758,31 +759,66 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 			switch (m_IC_PW2_RcvBuf[5])
 			{
 			case 0x11:
-				if (m_IC_PW2_RcvBuf.GetCount() == 9
-					&& m_DataMode != 0
-					&& unsigned(MAKEWORD(m_IC_PW2_RcvBuf[7], m_IC_PW2_RcvBuf[6])) >= m_uPwrAlertThreshold)
+				if (m_IC_PW2_RcvBuf.GetCount() == 9)
 				{
-					//CString szDebug;
-					//for (INT_PTR stIndex(0); stIndex < m_IC_PW2_RcvBuf.GetCount(); stIndex++)
-					//{
-					//	CString szOctet;
-					//	szOctet.Format(_T("0x%02X "), unsigned(m_IC_PW2_RcvBuf[stIndex]));
-					//	szDebug += szOctet;
-					//}
-					//szDebug.TrimRight();
-					//szDebug += _T("\n");
-					//OutputDebugString(szDebug);
-					if (!m_fAlertIssued)
+					m_wPW2Power = MAKEWORD(m_IC_PW2_RcvBuf[7], m_IC_PW2_RcvBuf[6]);
+					if (m_DataMode != 0
+						&& unsigned(m_wPW2Power) >= m_uPwrAlertThreshold)
 					{
-						SetDlgItemText(IDC_POWERALARM, _T("POWER!"));
-						MessageBeep(MB_ICONERROR);
-						m_fAlertIssued = true;
+						if (!m_fAlertIssued)
+						{
+							SetDlgItemText(IDC_INFO, _T("POWER!"));
+							MessageBeep(MB_ICONERROR);
+							m_fAlertIssued = true;
+						}
+					}
+					else if (m_fAlertIssued)
+					{
+						SetDlgItemText(IDC_INFO, _T(""));
+						m_fAlertIssued = false;
 					}
 				}
-				else if (m_fAlertIssued)
+				break;
+
+			case 0x12:
+				GetDlgItemText(IDC_INFO, textVal);
+
+				if (textVal.Find(_T("POWER!")) < 0)
 				{
-					SetDlgItemText(IDC_POWERALARM, _T(""));
-					m_fAlertIssued = false;
+					if (m_wPW2Power)
+					{
+						CString sDlgText;
+
+						GetDlgItemText(IDC_INFO, sDlgText);
+
+						if (sDlgText.IsEmpty()
+							|| sDlgText.Find(_T("POWER!")) < 0)
+						{
+							unsigned uSWR(MAKEWORD(m_IC_PW2_RcvBuf[7], m_IC_PW2_RcvBuf[6]));
+							CString sSWR;
+
+							if (uSWR == 0)
+							{
+								sSWR = _T("SWR: 1.0");
+							}
+							else if (uSWR <= 0x0080)
+							{
+								sSWR.Format(_T("SWR: %.2f"), 1 + ((0.5 / float(0x0040)) * float(uSWR)));
+							}
+							else
+							{
+								float fSWR(float(uSWR / 0x0040));
+
+								fSWR += float(uSWR % 0x0040) * (1.0 / 0x0040);
+								sSWR.Format(_T("SWR: %.2f"), fSWR);
+							}
+							SetDlgItemText(IDC_INFO, sSWR);
+						}
+					}
+					else if (!textVal.IsEmpty())
+					{
+						SetDlgItemText(IDC_INFO, _T(""));
+					}
 				}
 				break;
 

@@ -27,7 +27,7 @@
 #define IDC_AMP_500W                    1020
 #define IDC_AMP_1KW                     1021
 #define IDC_RFLEVEL                     1022
-#define IDC_POWERALARM                  1023
+#define IDC_INFO                        1023
 #define IDC_BUTTON1                     1024
 #define IDC_TUNE                        1024
 
