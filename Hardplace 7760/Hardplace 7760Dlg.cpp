@@ -57,7 +57,7 @@ CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	, m_TunerTimeout(theApp.GetProfileInt(_T("Settings"), _T("TunerTimeout"), 1000 * 5))
 	, m_TunerMonitorSWR(theApp.GetProfileInt(_T("Settings"), _T("TunerMonitorSWR"), false))
 	, m_uPwrAlertThreshold(theApp.GetProfileInt(_T("Settings"), _T("PowerAlarmThreshold"), 0xFFFF))
-	, m_fAlertIssued(false), m_fPlacementSet(false), m_fTuning(false)
+	, m_fAlertIssued(false), m_fPlacementSet(false), m_fTuning(false), m_fAbortTuning(false)
 	, m_Amp(-1)
 	, m_MaxPower(-1)
 	, m_PwrOn(-1)
@@ -552,18 +552,23 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 	}
 	else if (nIDEvent == m_idTunerEvent)
 	{
-		m_fTuning = false;
-
 		m_IC7760Transmit[6] = 0x00;
 		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760Transmit, sizeof m_IC7760Transmit));
 
-		m_IC7760OperatingModeCmd[5] = m_uBand;
-		m_IC7760OperatingModeCmd[6] = m_uOperatingMode;
-		m_IC7760OperatingModeCmd[7] = m_uDataMode;
-		m_IC7760OperatingModeCmd[8] = m_uFilter;
-		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760OperatingModeCmd, sizeof m_IC7760OperatingModeCmd));
+		if (m_fTuning)
+		{
+			m_fTuning = false;
+
+			m_IC7760OperatingModeCmd[5] = m_uBand;
+			m_IC7760OperatingModeCmd[6] = m_uOperatingMode;
+			m_IC7760OperatingModeCmd[7] = m_uDataMode;
+			m_IC7760OperatingModeCmd[8] = m_uFilter;
+			m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760OperatingModeCmd, sizeof m_IC7760OperatingModeCmd));
+		}
 
 		KillTimer(m_idTunerEvent);
+
+		SetDlgItemText(IDC_TUNE, _T("Tune"));
 	}
 
 	CDialogEx::OnTimer(nIDEvent);
@@ -671,7 +676,20 @@ void CHardplace7760Dlg::OnClickedPower(UINT nId)
 
 void CHardplace7760Dlg::OnClickedTune()
 {
-	m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760SplitSetting, sizeof m_IC7760SplitSetting));
+	CString szText;
+
+	GetDlgItemText(IDC_TUNE, szText);
+	m_fAbortTuning = (szText != _T("Tune"));
+
+	if (!m_fAbortTuning)
+	{
+		SetDlgItemText(IDC_TUNE, _T("Tuning"));
+		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760SplitSetting, sizeof m_IC7760SplitSetting));
+	}
+	else
+	{
+		OnTimer(m_idTunerEvent);
+	}
 }
 
 void CHardplace7760Dlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBar)
@@ -999,7 +1017,11 @@ void CHardplace7760Dlg::onIC_7760Packet()
 				switch (m_IC7760LastCommand[5])
 				{
 				case 0x00: // Transmit
-					if (m_TunerMonitorSWR
+					if (m_fAbortTuning)
+					{
+						OnTimer(m_idTunerEvent);
+					}
+					else if (m_TunerMonitorSWR
 						&& m_IC7760LastCommand[6] != 0x00)
 					{
 						m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760SWR, sizeof m_IC7760SWR));

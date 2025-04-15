@@ -58,6 +58,7 @@ protected:
 	bool m_fAlertIssued;
 	bool m_fPlacementSet;
 	bool m_fTuning;
+	bool m_fAbortTuning;
 	uint8_t m_uBand;
 	uint8_t m_uOperatingMode;
 	uint8_t m_uDataMode;
