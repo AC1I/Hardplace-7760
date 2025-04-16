@@ -555,6 +555,7 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 	{
 		m_IC7760Transmit[6] = 0x00;
 		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760Transmit, sizeof m_IC7760Transmit));
+		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760Transmit, sizeof m_IC7760Transmit));
 
 		if (m_fTuning)
 		{
@@ -787,33 +788,25 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 				{
 					if (m_wPW2Power)
 					{
-						CString sDlgText;
+						unsigned uSWR(MAKEWORD(m_IC_PW2_RcvBuf[7], m_IC_PW2_RcvBuf[6]));
+						CString sSWR;
 
-						GetDlgItemText(IDC_INFO, sDlgText);
-
-						if (sDlgText.IsEmpty()
-							|| sDlgText.Find(_T("POWER!")) < 0)
+						if (uSWR == 0)
 						{
-							unsigned uSWR(MAKEWORD(m_IC_PW2_RcvBuf[7], m_IC_PW2_RcvBuf[6]));
-							CString sSWR;
-
-							if (uSWR == 0)
-							{
-								sSWR = _T("SWR: 1.0");
-							}
-							else if (uSWR <= 0x0080)
-							{
-								sSWR.Format(_T("SWR: %.2f"), 1 + ((0.5 / float(0x0040)) * float(uSWR)));
-							}
-							else
-							{
-								float fSWR(float(uSWR / 0x0040));
-
-								fSWR += float(uSWR % 0x0040) * (1.0 / 0x0040);
-								sSWR.Format(_T("SWR: %.2f"), fSWR);
-							}
-							SetDlgItemText(IDC_INFO, sSWR);
+							sSWR = _T("SWR: 1.00");
 						}
+						else if (uSWR <= 0x0080)
+						{
+							sSWR.Format(_T("SWR: %.2f"), 1 + ((0.5 / float(0x0040)) * float(uSWR)));
+						}
+						else
+						{
+							float fSWR(float(uSWR / 0x0040));
+
+							fSWR += float(uSWR % 0x0040) * float(1.0 / float(0x0040));
+							sSWR.Format(_T("SWR: %.2f"), fSWR);
+						}
+						SetDlgItemText(IDC_INFO, sSWR);
 					}
 					else if (!textVal.IsEmpty())
 					{
