@@ -117,6 +117,11 @@ protected:
 	{
 		return (uchBCD_Digit & 0x0f) + ((uchBCD_Digit >> 4) * 10);
 	}
+	uint16_t bcd2uint16_t(uint8_t uchBCD_DigitLow, uint8_t uchBCD_DigitHi)
+	{
+		return uint16_t(bcd2uint8_t(uchBCD_DigitLow))
+			+ (100 * uint16_t(bcd2uint8_t(uchBCD_DigitHi)));
+	}
 
 	void TracePacket(const LPTSTR lpPrefix, CArray<uint8_t> &rPacket)
 	{

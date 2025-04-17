@@ -762,7 +762,7 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 			case 0x11:
 				if (m_IC_PW2_RcvBuf.GetCount() == 9)
 				{
-					m_wPW2Power = MAKEWORD(m_IC_PW2_RcvBuf[7], m_IC_PW2_RcvBuf[6]);
+					m_wPW2Power = bcd2uint16_t(m_IC_PW2_RcvBuf[7], m_IC_PW2_RcvBuf[6]);
 					if (m_DataMode != 0
 						&& unsigned(m_wPW2Power) >= m_uPwrAlertThreshold)
 					{
@@ -788,22 +788,29 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 				{
 					if (m_wPW2Power)
 					{
-						unsigned uSWR(MAKEWORD(m_IC_PW2_RcvBuf[7], m_IC_PW2_RcvBuf[6]));
 						CString sSWR;
+						unsigned uSWR(bcd2uint16_t(m_IC_PW2_RcvBuf[7], m_IC_PW2_RcvBuf[6]));
+
+						/* Read SWR meter level
+							( 0000=SWR1.0, 0040=SWR1.5, 0080=SWR2.0, 0120=SWR3.0)
+							
+							Read the Po meter level
+							(0000 = 0W ~0161 = 500W ~0201 = 1kW)
+						*/
 
 						if (uSWR == 0)
 						{
 							sSWR = _T("SWR: 1.00");
 						}
-						else if (uSWR <= 0x0080)
+						else if (uSWR <= 80)
 						{
-							sSWR.Format(_T("SWR: %.2f"), 1 + ((0.5 / float(0x0040)) * float(uSWR)));
+							sSWR.Format(_T("SWR: %.2f"), 1 + ((0.5 / 40.0) * float(uSWR)));
 						}
 						else
 						{
-							float fSWR(float(uSWR / 0x0040));
+							float fSWR(float(uSWR) / 40.0);
 
-							fSWR += float(uSWR % 0x0040) * float(1.0 / float(0x0040));
+							fSWR += float(uSWR % 40) * float(1.0 / 40.0);
 							sSWR.Format(_T("SWR: %.2f"), fSWR);
 						}
 						SetDlgItemText(IDC_INFO, sSWR);
