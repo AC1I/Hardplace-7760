@@ -773,7 +773,24 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 			case 0x11:
 				if (m_IC_PW2_RcvBuf.GetCount() == 9)
 				{
+					CWnd* pAMU(FindWindow(NULL, _T("Hardplace AMU-1000")));
+
 					m_wPW2Power = bcd2uint16_t(m_IC_PW2_RcvBuf[7], m_IC_PW2_RcvBuf[6]);
+
+					ASSERT(m_wPW2Power < sizeof m_PowerMap / sizeof(uint16_t));
+
+					if (pAMU) // ScreenScrape the AMU applet to build a power map
+					{
+						const int iDlgItemIdPwr(1004);
+						UINT uPwr(pAMU->GetDlgItemInt(iDlgItemIdPwr));
+
+						if (uPwr
+							&& m_PowerMap[m_wPW2Power] < uPwr)
+						{
+							m_PowerMap[m_wPW2Power] = uPwr;
+						}
+					}
+
 					if (m_DataMode != 0
 						&& unsigned(m_wPW2Power) >= m_uPwrAlertThreshold)
 					{
@@ -801,21 +818,6 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 					{
 						CString sSWR;
 						unsigned uSWR(bcd2uint16_t(m_IC_PW2_RcvBuf[7], m_IC_PW2_RcvBuf[6]));
-						CWnd* pAMU(FindWindow(NULL, _T("Hardplace AMU-1000")));
-
-						ASSERT(m_wPW2Power < sizeof m_PowerMap / sizeof(uint16_t));
-
-						if (pAMU) // ScreenScrape the AMU applet to build a power map
-						{
-							const int iDlgItemIdPwr(1004);
-							UINT uPwr(pAMU->GetDlgItemInt(iDlgItemIdPwr));
-
-							if (uPwr
-								&& m_PowerMap[m_wPW2Power] < uPwr)
-							{
-								m_PowerMap[m_wPW2Power] = uPwr;
-							}
-						}
 
 						if (m_PowerMap[m_wPW2Power] != 0)
 						{
