@@ -61,8 +61,10 @@ CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	, m_Amp(-1)
 	, m_MaxPower(-1)
 	, m_PwrOn(-1)
+	, m_uBand(0), m_uDataMode(0), m_uFilter(0), m_uOperatingMode(0), m_wPW2Power(0)
 {
 	memset(m_IC7760LastCommand, '\0', sizeof m_IC7760LastCommand);
+	memset(m_PowerMap, '\0', sizeof m_PowerMap);
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_AmpSetting, sizeof m_PW2_AmpSetting));
 	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_PowerSetting, sizeof m_PW2_PowerSetting));
@@ -70,6 +72,15 @@ CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_SWR, sizeof m_PW2_SWR));
 	m_IC_7760_PollQueue.Add(std::make_pair(m_IC7760_RFLevel, sizeof m_IC7760_RFLevel));
 	m_IC_7760_PollQueue.Add(std::make_pair(m_IC7760DataFilter, sizeof m_IC7760DataFilter));
+
+	uint8_t* lpPwrMap(0);
+	UINT nl;
+
+	if (theApp.GetProfileBinary(_T("Settings"), _T("PowerMap"), (LPBYTE*)&lpPwrMap, &nl))
+	{
+		memcpy(m_PowerMap, lpPwrMap, std::min<UINT>(sizeof m_PowerMap, nl));
+		delete[] lpPwrMap;
+	}
 }
 
 void CHardplace7760Dlg::DoDataExchange(CDataExchange* pDX)
@@ -790,28 +801,57 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 					{
 						CString sSWR;
 						unsigned uSWR(bcd2uint16_t(m_IC_PW2_RcvBuf[7], m_IC_PW2_RcvBuf[6]));
+						CWnd* pAMU(FindWindow(NULL, _T("Hardplace AMU-1000")));
+
+						ASSERT(m_wPW2Power < sizeof m_PowerMap / sizeof(uint16_t));
+
+						if (pAMU) // ScreenScrape the AMU applet to build a power map
+						{
+							const int iDlgItemIdPwr(1004);
+							UINT uPwr(pAMU->GetDlgItemInt(iDlgItemIdPwr));
+
+							if (uPwr
+								&& m_PowerMap[m_wPW2Power] < uPwr)
+							{
+								m_PowerMap[m_wPW2Power] = uPwr;
+							}
+						}
+
+						if (m_PowerMap[m_wPW2Power] != 0)
+						{
+							sSWR.Format(_T("%uW-"), m_PowerMap[m_wPW2Power]);
+						}
+						else
+						{
+							sSWR = _T("SWR: ");
+						}
 
 						/* Read SWR meter level
 							( 0000=SWR1.0, 0040=SWR1.5, 0080=SWR2.0, 0120=SWR3.0)
-							
+
 							Read the Po meter level
 							(0000 = 0W ~0161 = 500W ~0201 = 1kW)
 						*/
 
 						if (uSWR == 0)
 						{
-							sSWR = _T("SWR: 1.00");
+							sSWR += _T("1.00");
 						}
 						else if (uSWR <= 80)
 						{
-							sSWR.Format(_T("SWR: %.2f"), 1 + ((0.5 / 40.0) * float(uSWR)));
+							CString sVal;
+
+							sVal.Format(_T("%.2f"), 1 + ((0.5 / 40.0) * float(uSWR)));
+							sSWR += sVal;
 						}
 						else
 						{
-							float fSWR(float(uSWR) / 40.0);
+							CString sVal;
+							float fSWR(float(uSWR) / 40.0F);
 
 							fSWR += float(uSWR % 40) * float(1.0 / 40.0);
-							sSWR.Format(_T("SWR: %.2f"), fSWR);
+							sVal.Format(_T("%u-%.2f"), m_PowerMap[m_wPW2Power], fSWR);
+							sSWR += sVal;
 						}
 						SetDlgItemText(IDC_INFO, sSWR);
 					}
@@ -1117,5 +1157,5 @@ void CHardplace7760Dlg::OnDestroy()
 	wp.length = sizeof(WINDOWPLACEMENT);
 	GetWindowPlacement(&wp);
 	theApp.WriteProfileBinary(_T("Settings"), _T("Window"), (LPBYTE)&wp, wp.length);
-	//theApp.WriteProfileInt(_T("Settings"), _T("OnTop"), (GetWindowLong(GetSafeHwnd(), GWL_EXSTYLE) & WS_EX_TOPMOST) != 0 ? 1 : 0);
+	theApp.WriteProfileBinary(_T("Settings"), _T("PowerMap"), (LPBYTE)m_PowerMap, sizeof m_PowerMap);
 }
