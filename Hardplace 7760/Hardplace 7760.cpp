@@ -76,6 +76,21 @@ BOOL CHardplace7760App::InitInstance()
 		WriteProfileInt(_T("Settings"), _T("TunerTimeout"), 5);
 		WriteProfileInt(_T("Settings"), _T("TunerMonitorSWR"), true);
 		WriteProfileInt(_T("Settings"), _T("PowerAlarmThreshold"), 0xFFFF);
+		WriteProfileBinary(_T("Settings"), _T("PowerMap"), (LPBYTE)auDefPowerMap, sizeof auDefPowerMap);
+	}
+	else
+	{
+		LPBYTE lpPwrMap(0);
+		UINT nl;
+
+		if (theApp.GetProfileBinary(_T("Settings"), _T("PowerMap"), &lpPwrMap, &nl))
+		{
+			delete[] lpPwrMap;
+		}
+		else
+		{
+			WriteProfileBinary(_T("Settings"), _T("PowerMap"), LPBYTE(auDefPowerMap), sizeof auDefPowerMap);
+		}
 	}
 
 	CHardplace7760Dlg dlg;

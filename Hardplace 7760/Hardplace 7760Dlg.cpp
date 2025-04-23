@@ -79,7 +79,7 @@ CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	if (theApp.GetProfileBinary(_T("Settings"), _T("PowerMap"), (LPBYTE*)&lpPwrMap, &nl))
 	{
 		memcpy(m_PowerMap, lpPwrMap, std::min<UINT>(sizeof m_PowerMap, nl));
-		delete[] lpPwrMap;
+		delete[] LPBYTE(lpPwrMap);
 	}
 }
 
@@ -779,15 +779,29 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 
 					ASSERT(m_wPW2Power < sizeof m_PowerMap / sizeof(uint16_t));
 
-					if (pAMU) // ScreenScrape the AMU applet to build a power map
+					if (m_wPW2Power
+						&& pAMU) // ScreenScrape the AMU applet to build a power map
 					{
 						const int iDlgItemIdPwr(1004);
 						UINT uPwr(pAMU->GetDlgItemInt(iDlgItemIdPwr));
 
-						if (uPwr
-							&& m_PowerMap[m_wPW2Power] < uPwr)
+						if (uPwr && uPwr < 2000)
 						{
-							m_PowerMap[m_wPW2Power] = uPwr;
+							int iDiff(int(labs(long(m_PowerMap[m_wPW2Power]) - long(uPwr))));
+							double dVariance(double(m_PowerMap[m_wPW2Power]) / double(uPwr));
+
+							if ((dVariance < 0.95
+								|| dVariance > 1.05)
+								&& (iDiff > 0
+									&& iDiff < m_PowerMap[m_wPW2Power] / 4))
+							{
+								CString sDebug;
+
+								sDebug.Format(_T("Updating Power Map Index %u from %uW to %uW\n"), m_wPW2Power, m_PowerMap[m_wPW2Power], uPwr);
+								OutputDebugString(sDebug);
+
+								m_PowerMap[m_wPW2Power] = uPwr;
+							}
 						}
 					}
 
@@ -843,16 +857,16 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 						{
 							CString sVal;
 
-							sVal.Format(_T("%.2f"), 1 + ((0.5 / 40.0) * float(uSWR)));
+							sVal.Format(_T("%.2f"), 1.0 + ((0.5 / 40.0) * float(uSWR)));
 							sSWR += sVal;
 						}
 						else
 						{
 							CString sVal;
-							float fSWR(float(uSWR) / 40.0F);
+							float fSWR(float(uSWR / 40));
 
-							fSWR += float(uSWR % 40) * float(1.0 / 40.0);
-							sVal.Format(_T("%u-%.2f"), m_PowerMap[m_wPW2Power], fSWR);
+							fSWR += float(uSWR % 40) * (1.0F / 40.0F);
+							sVal.Format(_T("%.2f"), fSWR);
 							sSWR += sVal;
 						}
 						SetDlgItemText(IDC_INFO, sSWR);
