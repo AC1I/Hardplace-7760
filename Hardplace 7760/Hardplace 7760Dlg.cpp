@@ -429,7 +429,7 @@ void CHardplace7760Dlg::onSerialException(CSerialException& ex, CSerialPort& Por
 	AfxMessageBox(achErrorStr);
 }
 
-DWORD CHardplace7760Dlg::OctetsBuffered(HANDLE hPort)
+DWORD CHardplace7760Dlg::inQueue(HANDLE hPort)
 {
 	DWORD dwAvailable(0);
 	DWORD dwErrors;
@@ -442,13 +442,29 @@ DWORD CHardplace7760Dlg::OctetsBuffered(HANDLE hPort)
 	return dwAvailable;
 }
 
+DWORD CHardplace7760Dlg::outQueue(HANDLE hPort)
+{
+	DWORD dwAvailable(0);
+	DWORD dwErrors;
+	COMSTAT Status;
+
+	if (ClearCommError(hPort, &dwErrors, &Status))
+	{
+		dwAvailable = Status.cbOutQue;
+	}
+	return dwAvailable;
+}
+
 void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 {
 	if (nIDEvent == m_idTimerEvent)
 	{
-		if (m_IC_PW2_Serial.IsOpen())
+		const DWORD dwMaxXmtQueueDepth(32);
+
+		if (m_IC_PW2_Serial.IsOpen()
+			&& outQueue(HANDLE(m_IC_PW2_Serial)) < dwMaxXmtQueueDepth)
 		{
-			DWORD dwAvailable(OctetsBuffered(HANDLE(m_IC_PW2_Serial)));
+			DWORD dwAvailable(inQueue(HANDLE(m_IC_PW2_Serial)));
 
 			if (dwAvailable)
 			{
@@ -503,9 +519,10 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 				}
 			}
 		}
-		if (m_IC_7760_Serial.IsOpen())
+		if (m_IC_7760_Serial.IsOpen()
+			&& outQueue(HANDLE(m_IC_7760_Serial)) < dwMaxXmtQueueDepth)
 		{
-			DWORD dwAvailable(OctetsBuffered(HANDLE(m_IC_7760_Serial)));
+			DWORD dwAvailable(inQueue(HANDLE(m_IC_7760_Serial)));
 
 			if (dwAvailable)
 			{
@@ -523,6 +540,7 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 					catch (CSerialException ex) {
 						onSerialException(ex, m_IC_7760_Serial);
 						m_IC_7760_RcvBuf.RemoveAll();
+						m_IC_7760_XmtQueue.RemoveAll();
 						break;
 					}
 				}

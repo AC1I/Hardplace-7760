@@ -111,7 +111,8 @@ protected:
 
 	bool OpenCommPort(int iPort, CSerialPort& Port, bool fQuiet = false);
 	void onSerialException(CSerialException& ex, CSerialPort& Port);
-	DWORD OctetsBuffered(HANDLE hPort);
+	DWORD inQueue(HANDLE hPort);
+	DWORD outQueue(HANDLE hPort);
 	void onIC_PW2Packet();
 	void onIC_7760Packet();
 
