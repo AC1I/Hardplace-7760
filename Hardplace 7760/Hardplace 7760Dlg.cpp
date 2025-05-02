@@ -6,6 +6,7 @@
 #include "framework.h"
 #include "Hardplace 7760.h"
 #include "Hardplace 7760Dlg.h"
+#include "OptionsDlg.h"
 #include "afxdialogex.h"
 
 #ifdef _DEBUG
@@ -48,7 +49,7 @@ END_MESSAGE_MAP()
 
 // CHardplace7760Dlg dialog
 
-
+constexpr auto IDM_OPTIONS = 0x0020;
 
 CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_HARDPLACE_7760_DIALOG, pParent)
@@ -56,10 +57,10 @@ CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	, m_iRFLevel(-1), m_uPower(0), m_DataMode(0), m_uFilterWidth(0)
 	, m_TunerTimeout(theApp.GetProfileInt(_T("Settings"), _T("TunerTimeout"), 1000 * 5))
 	, m_TunerMonitorSWR(theApp.GetProfileInt(_T("Settings"), _T("TunerMonitorSWR"), false))
-	, m_uPwrAlertThreshold(theApp.GetProfileInt(_T("Settings"), _T("PowerAlarmThreshold"), 0xFFFF))
-	, m_fAlertIssued(false), m_fPlacementSet(false), m_fTuning(false), m_fAbortTuning(false)
-	, m_Amp(-1)
-	, m_MaxPower(-1)
+	, m_uPwrAlertThreshold(theApp.GetProfileInt(_T("Settings"), _T("PowerAlarmThreshold"), 255))
+	, m_fEnablePwrConstraint(theApp.GetProfileInt(_T("Settings"), _T("PowerContraint"), true))
+	, m_fAlertIssued(false), m_fPlacementSet(false)
+	, m_fTuning(false), m_fAbortTuning(false), m_Amp(-1), m_MaxPower(-1)
 	, m_PwrOn(-1)
 	, m_uBand(0), m_uDataMode(0), m_uFilter(0), m_uOperatingMode(0), m_wPW2Power(0)
 {
@@ -126,18 +127,30 @@ BOOL CHardplace7760Dlg::OnInitDialog()
 	// IDM_ABOUTBOX must be in the system command range.
 	ASSERT((IDM_ABOUTBOX & 0xFFF0) == IDM_ABOUTBOX);
 	ASSERT(IDM_ABOUTBOX < 0xF000);
+	ASSERT((IDM_OPTIONS & 0xFFF0) == IDM_OPTIONS);
+
 
 	CMenu* pSysMenu = GetSystemMenu(FALSE);
 	if (pSysMenu != nullptr)
 	{
 		BOOL bNameValid;
+		CString strConstraint;
 		CString strAboutMenu;
+
+		bNameValid = strConstraint.LoadString(IDS_OPTIONS);
+		ASSERT(bNameValid);
+
 		bNameValid = strAboutMenu.LoadString(IDS_ABOUTBOX);
 		ASSERT(bNameValid);
 		if (!strAboutMenu.IsEmpty())
 		{
 			pSysMenu->AppendMenu(MF_SEPARATOR);
 			pSysMenu->AppendMenu(MF_STRING, IDM_ABOUTBOX, strAboutMenu);
+		}
+		if (!strConstraint.IsEmpty())
+		{
+			pSysMenu->AppendMenu(MF_SEPARATOR);
+			pSysMenu->AppendMenu(MF_STRING, IDM_OPTIONS, strConstraint);
 		}
 	}
 
@@ -234,6 +247,23 @@ void CHardplace7760Dlg::OnSysCommand(UINT nID, LPARAM lParam)
 	{
 		CAboutDlg dlgAbout;
 		dlgAbout.DoModal();
+	}
+	else if ((nID & 0xFFF0) == IDM_OPTIONS)
+	{
+		COptionsDlg Dlg(nullptr, m_TunerTimeout / 1000, m_TunerMonitorSWR, m_uPwrAlertThreshold, m_fEnablePwrConstraint);
+
+		if (Dlg.DoModal() == IDOK)
+		{
+			m_fEnablePwrConstraint = Dlg.PowerConstrained();
+			m_uPwrAlertThreshold = Dlg.PowerMax();
+			m_TunerTimeout = Dlg.TunerSeconds() * 1000;
+			m_TunerMonitorSWR = Dlg.MonitorSWR();
+
+			theApp.WriteProfileInt(_T("Settings"), _T("TunerTimeout"), m_TunerTimeout);
+			theApp.WriteProfileInt(_T("Settings"), _T("TunerMonitorSWR"), m_TunerMonitorSWR);
+			theApp.WriteProfileInt(_T("Settings"), _T("PowerAlarmThreshold"), m_uPwrAlertThreshold);
+			theApp.WriteProfileInt(_T("Settings"), _T("PowerContraint"), m_fEnablePwrConstraint);
+		}
 	}
 	else
 	{
@@ -808,10 +838,11 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 							int iDiff(int(labs(long(m_PowerMap[m_wPW2Power]) - long(uPwr))));
 							double dVariance(double(m_PowerMap[m_wPW2Power]) / double(uPwr));
 
-							if ((dVariance < 0.95
-								|| dVariance > 1.05)
-								&& (iDiff > 0
-									&& iDiff < m_PowerMap[m_wPW2Power] / 4))
+							if (!m_fEnablePwrConstraint
+								|| ((dVariance < 0.95
+									|| dVariance > 1.05)
+									&& (iDiff > 0
+										&& iDiff < m_PowerMap[m_wPW2Power] / 4)))
 							{
 								CString sDebug;
 

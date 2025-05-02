@@ -39,8 +39,8 @@ protected:
 	const UINT_PTR m_idTimerEvent = 1;
 	const UINT_PTR m_idTunerEvent = 2;
 	const UINT m_TimerInterval = 100;
-	const UINT m_TunerTimeout;
-	const bool m_TunerMonitorSWR;
+	UINT m_TunerTimeout;
+	bool m_TunerMonitorSWR;
 	CSerialPort m_IC_PW2_Serial;
 	CSerialPort m_IC_7760_Serial;
 	CArray<uint8_t> m_IC_PW2_RcvBuf;
@@ -55,7 +55,8 @@ protected:
 	WORD m_wPW2Power;
 	uint8_t m_DataMode;
 	uint8_t m_uFilterWidth;
-	const unsigned m_uPwrAlertThreshold;
+	unsigned m_uPwrAlertThreshold;
+	bool m_fEnablePwrConstraint;
 	bool m_fAlertIssued;
 	bool m_fPlacementSet;
 	bool m_fTuning;

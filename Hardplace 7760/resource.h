@@ -8,8 +8,10 @@
 #define IDD_HARDPLACE_7760_DIALOG       102
 #define IDS_NOTFOUND                    102
 #define IDS_PORTBUSY                    103
+#define IDS_OPTIONS                     104
 #define IDR_MAINFRAME                   128
 #define IDI_ICON1                       131
+#define IDD_OPTIONS                     132
 #define IDC_PW2_Port                    1000
 #define IDC_7760_PORT                   1001
 #define IDC_PW2_COM_OPEN                1002
@@ -30,14 +32,21 @@
 #define IDC_INFO                        1023
 #define IDC_BUTTON1                     1024
 #define IDC_TUNE                        1024
+#define IDC_TUNESEC                     1025
+#define IDC_TUNESECSPIN                 1026
+#define IDC_PWRALARM                    1027
+#define IDC_PWRALARMSPIN                1028
+#define IDC_PWRCONSTRAINT               1029
+#define IDC_CHECK1                      1030
+#define IDC_MONITORSWR                  1030
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        132
+#define _APS_NEXT_RESOURCE_VALUE        134
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1025
+#define _APS_NEXT_CONTROL_VALUE         1031
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
