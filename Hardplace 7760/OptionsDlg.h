@@ -13,6 +13,7 @@ public:
 		CWnd* pParent = nullptr
 		, unsigned uTuneSec = 5
 		, bool fMonitorSWR = false
+		, uint16_t uTargetSWR = 40
 		, unsigned uPwrMax = 149
 		, bool fPwrConstraint = true);   // standard constructor
 	virtual ~COptionsDlg();
@@ -32,6 +33,9 @@ public:
 public:
 	bool MonitorSWR(void) const {
 		return m_fMonitorSWR;
+	}
+	uint16_t TargetSWR(void) const {
+		return m_uTargetSWR;
 	}
 	bool PowerConstrained(void) const {
 		return m_fPwrConstraint;
@@ -54,7 +58,12 @@ protected:
 	unsigned m_TuneSeconds;
 	unsigned m_uTuneSec;
 	bool m_fMonitorSWR;
+	uint16_t m_uTargetSWR;
 	unsigned m_uPwrMax;
 	bool m_fPwrConstraint;
 	CButton m_MonitorSWR;
+public:
+	afx_msg void OnDeltaposTargetSwrSpin(NMHDR* pNMHDR, LRESULT* pResult);
+protected:
+	void UpdateSWREdit(uint16_t uSWR);
 };

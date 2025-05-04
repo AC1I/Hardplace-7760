@@ -41,6 +41,7 @@ protected:
 	const UINT m_TimerInterval = 100;
 	UINT m_TunerTimeout;
 	bool m_TunerMonitorSWR;
+	uint16_t m_uTargetSWR;
 	CSerialPort m_IC_PW2_Serial;
 	CSerialPort m_IC_7760_Serial;
 	CArray<uint8_t> m_IC_PW2_RcvBuf;

@@ -32,13 +32,14 @@
 #define IDC_INFO                        1023
 #define IDC_BUTTON1                     1024
 #define IDC_TUNE                        1024
+#define IDC_TARGET_SWR_EDIT             1024
 #define IDC_TUNESEC                     1025
 #define IDC_TUNESECSPIN                 1026
 #define IDC_PWRALARM                    1027
 #define IDC_PWRALARMSPIN                1028
 #define IDC_PWRCONSTRAINT               1029
-#define IDC_CHECK1                      1030
 #define IDC_MONITORSWR                  1030
+#define IDC_TARGET_SWR_SPIN             1032
 
 // Next default values for new objects
 // 
@@ -46,7 +47,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        134
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1031
+#define _APS_NEXT_CONTROL_VALUE         1033
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

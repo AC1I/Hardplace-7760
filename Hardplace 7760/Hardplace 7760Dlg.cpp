@@ -57,12 +57,14 @@ CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	, m_iRFLevel(-1), m_uPower(0), m_DataMode(0), m_uFilterWidth(0)
 	, m_TunerTimeout(theApp.GetProfileInt(_T("Settings"), _T("TunerTimeout"), 1000 * 5))
 	, m_TunerMonitorSWR(theApp.GetProfileInt(_T("Settings"), _T("TunerMonitorSWR"), false))
+	, m_uTargetSWR(theApp.GetProfileInt(_T("Settings"), _T("TunerTargetSWR"), 40))
 	, m_uPwrAlertThreshold(theApp.GetProfileInt(_T("Settings"), _T("PowerAlarmThreshold"), 255))
 	, m_fEnablePwrConstraint(theApp.GetProfileInt(_T("Settings"), _T("PowerContraint"), true))
 	, m_fAlertIssued(false), m_fPlacementSet(false)
 	, m_fTuning(false), m_fAbortTuning(false), m_Amp(-1), m_MaxPower(-1)
 	, m_PwrOn(-1)
-	, m_uBand(0), m_uDataMode(0), m_uFilter(0), m_uOperatingMode(0), m_wPW2Power(0)
+	, m_uBand(0), m_uDataMode(0), m_uFilter(0)
+	, m_uOperatingMode(0), m_wPW2Power(0)
 {
 	memset(m_IC7760LastCommand, '\0', sizeof m_IC7760LastCommand);
 	memset(m_PowerMap, '\0', sizeof m_PowerMap);
@@ -250,17 +252,19 @@ void CHardplace7760Dlg::OnSysCommand(UINT nID, LPARAM lParam)
 	}
 	else if ((nID & 0xFFF0) == IDM_OPTIONS)
 	{
-		COptionsDlg Dlg(nullptr, m_TunerTimeout / 1000, m_TunerMonitorSWR, m_uPwrAlertThreshold, m_fEnablePwrConstraint);
+		COptionsDlg Dlg(nullptr, m_TunerTimeout / 1000, m_TunerMonitorSWR, m_uTargetSWR, m_uPwrAlertThreshold, m_fEnablePwrConstraint);
 
 		if (Dlg.DoModal() == IDOK)
 		{
-			m_fEnablePwrConstraint = Dlg.PowerConstrained();
-			m_uPwrAlertThreshold = Dlg.PowerMax();
 			m_TunerTimeout = Dlg.TunerSeconds() * 1000;
 			m_TunerMonitorSWR = Dlg.MonitorSWR();
+			m_uTargetSWR = Dlg.TargetSWR();
+			m_uPwrAlertThreshold = Dlg.PowerMax();
+			m_fEnablePwrConstraint = Dlg.PowerConstrained();
 
 			theApp.WriteProfileInt(_T("Settings"), _T("TunerTimeout"), m_TunerTimeout);
 			theApp.WriteProfileInt(_T("Settings"), _T("TunerMonitorSWR"), m_TunerMonitorSWR);
+			theApp.WriteProfileInt(_T("Settings"), _T("TunerTargetSWR"), m_uTargetSWR);
 			theApp.WriteProfileInt(_T("Settings"), _T("PowerAlarmThreshold"), m_uPwrAlertThreshold);
 			theApp.WriteProfileInt(_T("Settings"), _T("PowerContraint"), m_fEnablePwrConstraint);
 		}
@@ -1082,13 +1086,10 @@ void CHardplace7760Dlg::onIC_7760Packet()
 			switch (m_IC_7760_RcvBuf[5])
 			{
 			case 0x12: // SWR
-				if (m_IC_7760_RcvBuf[6] == 0x00 && m_IC_7760_RcvBuf[7] <= 0x48) // <= 1.5
+				if (!m_TunerMonitorSWR
+					|| bcd2uint16_t(m_IC_7760_RcvBuf[7], m_IC_7760_RcvBuf[6]) <= m_uTargetSWR)
 				{
-#if 0
-					TracePacket(_T("SWR:"), m_IC_7760_RcvBuf);
-#else
 					OnTimer(m_idTunerEvent); // Stop Tuning
-#endif
 				}
 				else
 				{
