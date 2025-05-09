@@ -57,7 +57,7 @@ CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	, m_iRFLevel(-1), m_uPower(0), m_DataMode(0), m_uFilterWidth(0)
 	, m_TunerTimeout(theApp.GetProfileInt(_T("Settings"), _T("TunerTimeout"), 1000 * 5))
 	, m_TunerMonitorSWR(theApp.GetProfileInt(_T("Settings"), _T("TunerMonitorSWR"), false))
-	, m_uTargetSWR(theApp.GetProfileInt(_T("Settings"), _T("TunerTargetSWR"), 40))
+	, m_uTargetSWR(theApp.GetProfileInt(_T("Settings"), _T("TunerTargetSWR"), 48))
 	, m_uPwrAlertThreshold(theApp.GetProfileInt(_T("Settings"), _T("PowerAlarmThreshold"), 255))
 	, m_fEnablePwrConstraint(theApp.GetProfileInt(_T("Settings"), _T("PowerContraint"), true))
 	, m_fAlertIssued(false), m_fPlacementSet(false)
@@ -65,6 +65,7 @@ CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	, m_PwrOn(-1)
 	, m_uBand(0), m_uDataMode(0), m_uFilter(0)
 	, m_uOperatingMode(0), m_wPW2Power(0)
+	, m_PW2Tuner(0)
 {
 	memset(m_IC7760LastCommand, '\0', sizeof m_IC7760LastCommand);
 	memset(m_PowerMap, '\0', sizeof m_PowerMap);
@@ -73,6 +74,7 @@ CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_PowerSetting, sizeof m_PW2_PowerSetting));
 	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_PowerOut, sizeof m_PW2_PowerOut));
 	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_SWR, sizeof m_PW2_SWR));
+	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_Tuner, sizeof m_PW2_Tuner));
 	m_IC_7760_PollQueue.Add(std::make_pair(m_IC7760_RFLevel, sizeof m_IC7760_RFLevel));
 	m_IC_7760_PollQueue.Add(std::make_pair(m_IC7760DataFilter, sizeof m_IC7760DataFilter));
 
@@ -97,6 +99,7 @@ void CHardplace7760Dlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Radio(pDX, IDC_AMP_OFF, m_Amp);
 	DDX_Radio(pDX, IDC_AMP_500W, m_MaxPower);
 	DDX_Radio(pDX, IDC_ON, m_PwrOn);
+	DDX_Radio(pDX, IDC_TUNER_OFF, m_PW2Tuner);
 }
 
 BEGIN_MESSAGE_MAP(CHardplace7760Dlg, CDialogEx)
@@ -107,6 +110,7 @@ BEGIN_MESSAGE_MAP(CHardplace7760Dlg, CDialogEx)
 	ON_BN_CLICKED(IDC_PW2_COM_OPEN, &CHardplace7760Dlg::OnPW2ComOpen)
 	ON_BN_CLICKED(IDC_7760_COM_OPEN, &CHardplace7760Dlg::On7760ComOpen)
 	ON_WM_TIMER()
+	ON_CONTROL_RANGE(BN_CLICKED, IDC_TUNER_OFF, IDC_TUNER_TUNE, &CHardplace7760Dlg::OnClickedTuner)
 	ON_CONTROL_RANGE(BN_CLICKED, IDC_AMP_OFF, IDC_AMP_ON, &CHardplace7760Dlg::OnClickedAmp)
 	ON_CONTROL_RANGE(BN_CLICKED, IDC_AMP_500W, IDC_AMP_1KW, &CHardplace7760Dlg::OnClickedMaxPower)
 	ON_CONTROL_RANGE(BN_CLICKED, IDC_50W, IDC_200W, &CHardplace7760Dlg::OnClickedRFLevel)
@@ -639,6 +643,24 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 	CDialogEx::OnTimer(nIDEvent);
 }
 
+void CHardplace7760Dlg::OnClickedTuner(UINT nId)
+{
+	UpdateData();
+
+	switch (m_PW2Tuner)
+	{
+	case 0:
+	case 1:
+	case 2:
+		m_PW2_TunerCmd[6] = m_PW2Tuner;
+		m_IC_PW2_XmtQueue.Add(std::make_pair(m_PW2_TunerCmd, sizeof m_PW2_TunerCmd));
+		break;
+
+	default:
+		break;
+	}
+}
+
 void CHardplace7760Dlg::OnClickedAmp(UINT nId)
 {
 	UpdateData();
@@ -646,12 +668,8 @@ void CHardplace7760Dlg::OnClickedAmp(UINT nId)
 	switch (m_Amp)
 	{
 	case 0:
-		m_PW2_AmpCmd[6] = 0x00;
-		m_IC_PW2_XmtQueue.Add(std::make_pair(m_PW2_AmpCmd, sizeof m_PW2_AmpCmd));
-		break;
-
 	case 1:
-		m_PW2_AmpCmd[6] = 0x01;
+		m_PW2_AmpCmd[6] = m_Amp;
 		m_IC_PW2_XmtQueue.Add(std::make_pair(m_PW2_AmpCmd, sizeof m_PW2_AmpCmd));
 		break;
 
@@ -667,12 +685,8 @@ void CHardplace7760Dlg::OnClickedMaxPower(UINT nId)
 	switch (m_MaxPower)
 	{
 	case 0:
-		m_PW2_MaxPwrCmd[6] = 0x00;
-		m_IC_PW2_XmtQueue.Add(std::make_pair(m_PW2_MaxPwrCmd, sizeof m_PW2_MaxPwrCmd));
-		break;
-
 	case 1:
-		m_PW2_MaxPwrCmd[6] = 0x01;
+		m_PW2_MaxPwrCmd[6] = m_MaxPower;
 		m_IC_PW2_XmtQueue.Add(std::make_pair(m_PW2_MaxPwrCmd, sizeof m_PW2_MaxPwrCmd));
 		break;
 
@@ -967,6 +981,12 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 		case 0x1C:
 			switch (m_IC_PW2_RcvBuf[5])
 			{
+			case 1:
+				if (m_IC_PW2_RcvBuf.GetCount() == 8)
+				{
+					m_PW2Tuner = m_IC_PW2_RcvBuf[6];
+					UpdateData(FALSE);
+				}
 			case 3:
 				if (m_IC_PW2_RcvBuf.GetCount() == 12)
 				{
