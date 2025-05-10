@@ -65,7 +65,7 @@ CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	, m_PwrOn(-1)
 	, m_uBand(0), m_uDataMode(0), m_uFilter(0)
 	, m_uOperatingMode(0), m_wPW2Power(0)
-	, m_PW2Tuner(0)
+	, m_PW2Tuner(-1)
 {
 	memset(m_IC7760LastCommand, '\0', sizeof m_IC7760LastCommand);
 	memset(m_PowerMap, '\0', sizeof m_PowerMap);
@@ -77,6 +77,7 @@ CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_Tuner, sizeof m_PW2_Tuner));
 	m_IC_7760_PollQueue.Add(std::make_pair(m_IC7760_RFLevel, sizeof m_IC7760_RFLevel));
 	m_IC_7760_PollQueue.Add(std::make_pair(m_IC7760DataFilter, sizeof m_IC7760DataFilter));
+	m_IC_7760_PollQueue.Add(std::make_pair(m_IC7760_Tuner, sizeof m_IC7760_Tuner));
 
 	uint8_t* lpPwrMap(0);
 	UINT nl;
@@ -206,6 +207,7 @@ BOOL CHardplace7760Dlg::OnInitDialog()
 				}
 			}
 
+			int iOpenMap(theApp.GetProfileInt(_T("Settings"), _T("AutoOpen"), 0));
 			UINT uDefaultPort(theApp.GetProfileInt(_T("Settings"), _T("IC_PW2_Port"), 0));
 			CString findString;
 
@@ -215,7 +217,10 @@ BOOL CHardplace7760Dlg::OnInitDialog()
 			if (nIndex != CB_ERR)
 			{
 				m_IC_PW2_Port.SetCurSel(nIndex);
-				OpenCommPort(uDefaultPort, m_IC_PW2_Serial, true);
+				if ((iOpenMap & 0x01) != 0)
+				{
+					OpenCommPort(uDefaultPort, m_IC_PW2_Serial, true);
+				}
 			}
 			else
 			{
@@ -230,7 +235,10 @@ BOOL CHardplace7760Dlg::OnInitDialog()
 			if (nIndex != CB_ERR)
 			{
 				m_IC_7760_Port.SetCurSel(nIndex);
-				OpenCommPort(uDefaultPort, m_IC_7760_Serial, true);
+				if ((iOpenMap & 0x02) != 0)
+				{
+					OpenCommPort(uDefaultPort, m_IC_7760_Serial, true);
+				}
 			}
 			else
 			{
@@ -318,11 +326,15 @@ HCURSOR CHardplace7760Dlg::OnQueryDragIcon()
 
 void CHardplace7760Dlg::OnClose()
 {
+	int iAutoOpenMap(0);
+
 	KillTimer(m_idTimerEvent);
+
 	try
 	{
 		if (m_IC_PW2_Serial.IsOpen())
 		{
+			iAutoOpenMap |= 1;
 			m_IC_PW2_Serial.Flush();
 			m_IC_PW2_Serial.Close();
 		}
@@ -335,6 +347,7 @@ void CHardplace7760Dlg::OnClose()
 	{
 		if (m_IC_7760_Serial.IsOpen())
 		{
+			iAutoOpenMap |= 2;
 			m_IC_7760_Serial.Flush();
 			m_IC_7760_Serial.Close();
 		}
@@ -344,6 +357,7 @@ void CHardplace7760Dlg::OnClose()
 
 	}
 
+	theApp.WriteProfileInt(_T("Settings"), _T("AutoOpen"), iAutoOpenMap);
 	CDialogEx::OnClose();
 }
 
@@ -356,6 +370,7 @@ void CHardplace7760Dlg::OnPW2ComOpen()
 			m_IC_PW2_Serial.Flush();
 			m_IC_PW2_Serial.Close();
 			SetDlgItemText(IDC_PW2_COM_OPEN, _T("Open"));
+			m_PW2Tuner = -1;
 			m_MaxPower = -1;
 			m_Amp = -1;
 			UpdateData(FALSE);
@@ -652,8 +667,16 @@ void CHardplace7760Dlg::OnClickedTuner(UINT nId)
 	case 0:
 	case 1:
 	case 2:
-		m_PW2_TunerCmd[6] = m_PW2Tuner;
-		m_IC_PW2_XmtQueue.Add(std::make_pair(m_PW2_TunerCmd, sizeof m_PW2_TunerCmd));
+		if (m_IC_PW2_Serial.IsOpen())
+		{
+			m_PW2_TunerCmd[6] = m_PW2Tuner;
+			m_IC_PW2_XmtQueue.Add(std::make_pair(m_PW2_TunerCmd, sizeof m_PW2_TunerCmd));
+		}
+		else
+		{
+			m_IC7760_TunerCmd[6] = m_PW2Tuner;
+			m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760_TunerCmd, sizeof m_IC7760_TunerCmd));
+		}
 		break;
 
 	default:
@@ -1010,10 +1033,12 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 
 		case 0xFA:
 			UpdateData();
-			if (m_Amp != -1
+			if (m_PW2Tuner == -1
+				|| m_Amp != -1
 				|| m_MaxPower != -1)
 			{
 				SetDlgItemText(IDC_FREQUENCY, _T(""));
+				m_PW2Tuner = -1;
 				m_Amp = -1;
 				m_MaxPower = -1;
 				UpdateData(FALSE);
@@ -1137,6 +1162,21 @@ void CHardplace7760Dlg::onIC_7760Packet()
 				break;
 			}
 			break;
+		case 0x1C:
+			switch (m_IC_7760_RcvBuf[5])
+			{
+			case 1:
+				if (!m_IC_PW2_Serial.IsOpen()
+					&& m_IC_7760_RcvBuf.GetCount() == 8)
+				{
+					m_PW2Tuner = m_IC_7760_RcvBuf[6];
+					UpdateData(FALSE);
+				}
+
+			default:
+				break;
+			}
+			break;
 
 		case 0x26: // Operating Mode
 			m_uBand = m_IC_7760_RcvBuf[5];
@@ -1161,6 +1201,7 @@ void CHardplace7760Dlg::onIC_7760Packet()
 				|| m_iRFLevel != -1)
 			{
 				m_iRFLevel = -1;
+				m_PW2Tuner = -1;
 				m_Amp = -1;
 				m_MaxPower = -1;
 				m_uPower = 0;
