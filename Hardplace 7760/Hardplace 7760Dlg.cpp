@@ -96,7 +96,7 @@ void CHardplace7760Dlg::DoDataExchange(CDataExchange* pDX)
 	DDX_Control(pDX, IDC_7760_PORT, m_IC_7760_Port);
 	DDX_Control(pDX, IDC_POWER, m_PwrCtrl);
 	DDX_Control(pDX, IDC_FREQUENCY, m_Frequency);
-	DDX_Radio(pDX, IDC_50W, m_iRFLevel);
+	DDX_Radio(pDX, IDC_5W, m_iRFLevel);
 	DDX_Radio(pDX, IDC_AMP_OFF, m_Amp);
 	DDX_Radio(pDX, IDC_AMP_500W, m_MaxPower);
 	DDX_Radio(pDX, IDC_ON, m_PwrOn);
@@ -114,7 +114,7 @@ BEGIN_MESSAGE_MAP(CHardplace7760Dlg, CDialogEx)
 	ON_CONTROL_RANGE(BN_CLICKED, IDC_TUNER_OFF, IDC_TUNER_TUNE, &CHardplace7760Dlg::OnClickedTuner)
 	ON_CONTROL_RANGE(BN_CLICKED, IDC_AMP_OFF, IDC_AMP_ON, &CHardplace7760Dlg::OnClickedAmp)
 	ON_CONTROL_RANGE(BN_CLICKED, IDC_AMP_500W, IDC_AMP_1KW, &CHardplace7760Dlg::OnClickedMaxPower)
-	ON_CONTROL_RANGE(BN_CLICKED, IDC_50W, IDC_200W, &CHardplace7760Dlg::OnClickedRFLevel)
+	ON_CONTROL_RANGE(BN_CLICKED, IDC_5W, IDC_200W, &CHardplace7760Dlg::OnClickedRFLevel)
 	ON_CONTROL_RANGE(BN_CLICKED, IDC_ON, IDC_OFF, &CHardplace7760Dlg::OnClickedPower)
 	ON_WM_VSCROLL()
 	ON_WM_SHOWWINDOW()
@@ -726,23 +726,41 @@ void CHardplace7760Dlg::OnClickedRFLevel(UINT nId)
 	{
 	case 0:
 		m_IC7760RFLevelCmd[6] = 0x00;
-		m_IC7760RFLevelCmd[7] = 0x64;
+		m_IC7760RFLevelCmd[7] = 0x07;
 		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
 		break;
 
 	case 1:
+		m_IC7760RFLevelCmd[6] = 0x00;
+		m_IC7760RFLevelCmd[7] = 0x13;
+		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
+		break;
+
+	case 2:
+		m_IC7760RFLevelCmd[6] = 0x00;
+		m_IC7760RFLevelCmd[7] = 0x26;
+		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
+		break;
+
+	case 3:
+		m_IC7760RFLevelCmd[6] = 0x00;
+		m_IC7760RFLevelCmd[7] = 0x64;
+		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
+		break;
+
+	case 4:
 		m_IC7760RFLevelCmd[6] = 0x01;
 		m_IC7760RFLevelCmd[7] = 0x28;
 		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
 		break;
 
-	case 2:
+	case 5:
 		m_IC7760RFLevelCmd[6] = 0x01;
 		m_IC7760RFLevelCmd[7] = 0x92;
 		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
 		break;
 
-	case 3:
+	case 6:
 		m_IC7760RFLevelCmd[6] = 0x02;
 		m_IC7760RFLevelCmd[7] = 0x55;
 		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
@@ -1099,17 +1117,26 @@ void CHardplace7760Dlg::onIC_7760Packet()
 
 						switch (uPower)
 						{
-						case 64:
+						case 7:
 							m_iRFLevel = 0;
 							break;
-						case 128:
+						case 13:
 							m_iRFLevel = 1;
 							break;
-						case 192:
+						case 26:
 							m_iRFLevel = 2;
 							break;
-						case 255:
+						case 64:
 							m_iRFLevel = 3;
+							break;
+						case 128:
+							m_iRFLevel = 4;
+							break;
+						case 192:
+							m_iRFLevel = 5;
+							break;
+						case 255:
+							m_iRFLevel = 6;
 							break;
 						default:
 							m_iRFLevel = -1;

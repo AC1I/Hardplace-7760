@@ -18,10 +18,13 @@
 #define IDC_7760_COM_OPEN               1003
 #define IDC_FREQUENCY                   1004
 #define IDC_POWER                       1008
-#define IDC_50W                         1009
-#define IDC_150W                        1010
-#define IDC_100W                        1011
-#define IDC_200W                        1012
+#define IDC_5W                          1009
+#define IDC_10W                         1010
+#define IDC_20W                         1011
+#define IDC_50W                         1012
+#define IDC_150W                        1013
+#define IDC_100W                        1014
+#define IDC_200W                        1015
 #define IDC_ON                          1016
 #define IDC_OFF                         1017
 #define IDC_AMP_OFF                     1018
@@ -41,7 +44,6 @@
 #define IDC_MONITORSWR                  1030
 #define IDC_TARGET_SWR_SPIN             1032
 #define IDC_TUNER_OFF                   1033
-#define DC_TUNER_ON                     1034
 #define IDC_TUNER_ON                    1034
 #define IDC_TUNER_TUNE                  1035
 
