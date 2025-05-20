@@ -70,14 +70,18 @@ CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	memset(m_IC7760LastCommand, '\0', sizeof m_IC7760LastCommand);
 	memset(m_PowerMap, '\0', sizeof m_PowerMap);
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
+
 	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_AmpSetting, sizeof m_PW2_AmpSetting));
 	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_PowerSetting, sizeof m_PW2_PowerSetting));
 	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_PowerOut, sizeof m_PW2_PowerOut));
 	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_SWR, sizeof m_PW2_SWR));
 	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_Tuner, sizeof m_PW2_Tuner));
+
 	m_IC_7760_PollQueue.Add(std::make_pair(m_IC7760_RFLevel, sizeof m_IC7760_RFLevel));
 	m_IC_7760_PollQueue.Add(std::make_pair(m_IC7760DataFilter, sizeof m_IC7760DataFilter));
 	m_IC_7760_PollQueue.Add(std::make_pair(m_IC7760_Tuner, sizeof m_IC7760_Tuner));
+
+	m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760_RFLevel, sizeof m_IC7760_RFLevel));
 
 	uint8_t* lpPwrMap(0);
 	UINT nl;
@@ -406,6 +410,7 @@ void CHardplace7760Dlg::On7760ComOpen()
 		{
 			OpenCommPort(int(m_IC_7760_Port.GetItemData(m_IC_7760_Port.GetCurSel())), m_IC_7760_Serial);
 			theApp.WriteProfileInt(_T("Settings"), _T("IC_7760_Port"), int(m_IC_7760_Port.GetItemData(m_IC_7760_Port.GetCurSel())));
+			m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760_RFLevel, sizeof m_IC7760_RFLevel));
 		}
 	}
 	catch (CSerialException ex)
@@ -615,7 +620,8 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 						m_IC_7760_XmtQueue.RemoveAll();
 					}
 				}
-				else if (!m_IC_7760_PollQueue.IsEmpty())
+				else if (m_PwrOn == 0
+						 && !m_IC_7760_PollQueue.IsEmpty())
 				{
 					memcpy(m_IC7760LastCommand, m_IC_7760_PollQueue[0].first, m_IC_7760_PollQueue[0].second);
 					try
@@ -959,13 +965,13 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 
 						if (uSWR == 0)
 						{
-							sSWR += _T("1.00");
+							sSWR += _T("1.00:1");
 						}
 						else if (uSWR <= 80)
 						{
 							CString sVal;
 
-							sVal.Format(_T("%.2f"), 1.0 + ((0.5 / 40.0) * float(uSWR)));
+							sVal.Format(_T("%.2f:1"), 1.0 + ((0.5 / 40.0) * float(uSWR)));
 							sSWR += sVal;
 						}
 						else
@@ -974,7 +980,7 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 							float fSWR(float(uSWR / 40));
 
 							fSWR += float(uSWR % 40) * (1.0F / 40.0F);
-							sVal.Format(_T("%.2f"), fSWR);
+							sVal.Format(_T("%.2f:1"), fSWR);
 							sSWR += sVal;
 						}
 						SetDlgItemText(IDC_INFO, sSWR);
@@ -1223,26 +1229,33 @@ void CHardplace7760Dlg::onIC_7760Packet()
 			break;
 
 		case 0xFA: // NG Response
-			if (m_PwrOn != 1
-				|| m_Amp != -1
-				|| m_iRFLevel != -1)
-			{
-				m_iRFLevel = -1;
-				m_PW2Tuner = -1;
-				m_Amp = -1;
-				m_MaxPower = -1;
-				m_uPower = 0;
-				m_PwrOn = 1;
-				m_PwrCtrl.SetPos(m_PwrCtrl.GetRangeMax());
-				SetDlgItemText(IDC_FREQUENCY, _T(""));
-				UpdateData(FALSE);
-			}
 			m_fTuning = false;
+			if (m_PwrOn < 0)
+			{
+				m_PwrOn = 1;
+			}
+			UpdateData(FALSE);
 			break;
 
 		case 0xFB: // OK response
 			switch (m_IC7760LastCommand[4])
 			{
+			case 0x18:
+				if (m_IC7760LastCommand[5] == 1)
+				{
+					m_PwrOn = 0;
+				}
+				else
+				{
+					m_PwrOn = 1;
+					m_iRFLevel = -1;
+					m_uPower = 0;
+					m_PwrCtrl.SetPos(m_PwrCtrl.GetRangeMax());
+					SetDlgItemText(IDC_RFLEVEL, _T("RF Level:"));
+				}
+				UpdateData(FALSE);
+				break;
+
 			case 0x1C:
 				switch (m_IC7760LastCommand[5])
 				{
