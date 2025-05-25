@@ -38,8 +38,10 @@ protected:
 	
 	const UINT_PTR m_idTimerEvent = 1;
 	const UINT_PTR m_idTunerEvent = 2;
+	const UINT_PTR m_idPowerEvent = 3;
 	const UINT m_TimerInterval = 100;
 	UINT m_TunerTimeout;
+	const UINT m_TimerPower = 10000;
 	bool m_TunerMonitorSWR;
 	uint16_t m_uTargetSWR;
 	CSerialPort m_IC_PW2_Serial;

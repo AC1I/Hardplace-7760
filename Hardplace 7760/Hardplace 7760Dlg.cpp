@@ -553,6 +553,7 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 					try
 					{
 						m_IC_PW2_Serial.Write(m_IC_PW2_XmtQueue[0].first, DWORD(m_IC_PW2_XmtQueue[0].second));
+						m_IC_PW2_Serial.Flush();
 						m_IC_PW2_XmtQueue.RemoveAt(0);
 					}
 					catch (CSerialException ex) {
@@ -612,6 +613,7 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 					try
 					{
 						m_IC_7760_Serial.Write(m_IC_7760_XmtQueue[0].first, DWORD(m_IC_7760_XmtQueue[0].second));
+						m_IC_7760_Serial.Flush();
 						m_IC_7760_XmtQueue.RemoveAt(0);
 					}
 					catch (CSerialException ex) {
@@ -636,6 +638,11 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 						m_IC_7760_PollQueue.RemoveAll();
 					}
 				}
+				else if (m_PwrOn != 0
+						&& m_IC_7760_XmtQueue.IsEmpty())
+				{
+					m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760_RFLevel, sizeof m_IC7760_RFLevel));
+				}
 			}
 		}
 	}
@@ -659,6 +666,11 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 		KillTimer(m_idTunerEvent);
 
 		SetDlgItemText(IDC_TUNE, _T("Tune"));
+	}
+	else if (nIDEvent == m_idPowerEvent)
+	{
+		SetDlgItemText(IDC_INFO, _T(""));
+		KillTimer(m_idPowerEvent);
 	}
 
 	CDialogEx::OnTimer(nIDEvent);
@@ -798,6 +810,9 @@ void CHardplace7760Dlg::OnClickedPower(UINT nId)
 	default:
 		break;
 	}
+
+	m_PwrOn = (m_PwrOn == 0) ? 1 : 0;
+	UpdateData(FALSE);
 }
 
 void CHardplace7760Dlg::OnClickedTune()
@@ -877,6 +892,7 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 					m_FreqInput1 / 1000000, (m_FreqInput1 % 1000000) / 1000, (m_FreqInput1 % 1000) / 10,
 					m_FreqInput2 / 1000000, (m_FreqInput2 % 1000000) / 1000, (m_FreqInput2 % 1000) / 10);
 				SetDlgItemText(IDC_FREQUENCY, textVal);
+				SetDlgItemText(IDC_INFO, _T(""));
 			}
 			break;
 
@@ -887,10 +903,17 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 				if (m_IC_PW2_RcvBuf.GetCount() == 9)
 				{
 					CWnd* pAMU(FindWindow(NULL, _T("Hardplace AMU-1000")));
+					const WORD wPowerLast(m_wPW2Power);
 
 					m_wPW2Power = bcd2uint16_t(m_IC_PW2_RcvBuf[7], m_IC_PW2_RcvBuf[6]);
 
 					ASSERT(m_wPW2Power < sizeof m_PowerMap / sizeof(uint16_t));
+
+					if (wPowerLast != 0
+						&& m_wPW2Power == 0)
+					{
+						SetTimer(m_idPowerEvent, m_TimerPower, nullptr);
+					}
 
 					if (m_wPW2Power
 						&& pAMU) // ScreenScrape the AMU applet to build a power map
@@ -919,7 +942,8 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 						}
 					}
 
-					if (m_DataMode != 0
+					if (m_fEnablePwrConstraint
+						&& m_DataMode != 0
 						&& unsigned(m_wPW2Power) >= m_uPwrAlertThreshold)
 					{
 						if (!m_fAlertIssued)
@@ -985,10 +1009,6 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 						}
 						SetDlgItemText(IDC_INFO, sSWR);
 					}
-					else if (!textVal.IsEmpty())
-					{
-						SetDlgItemText(IDC_INFO, _T(""));
-					}
 				}
 				break;
 
@@ -1047,6 +1067,7 @@ void CHardplace7760Dlg::onIC_PW2Packet()
 						m_FreqInput1 / 1000000, (m_FreqInput1 % 1000000) / 1000, (m_FreqInput1 % 1000) / 10,
 						m_FreqInput2 / 1000000, (m_FreqInput2 % 1000000) / 1000, (m_FreqInput2 % 1000) / 10);
 					SetDlgItemText(IDC_FREQUENCY, textVal);
+					SetDlgItemText(IDC_INFO, _T(""));
 				}
 				break;
 
