@@ -7,6 +7,7 @@
 #include "SerialPort.h"
 #include <afxwin.h>
 #include <utility>
+#include "CDataFilterDlg.h"
 
 
 // CHardplace7760Dlg dialog
@@ -26,6 +27,21 @@ protected:
 
 
 	// Implementation
+	friend CDataFilterDlg;
+
+	class CCIVArray : public CArray<std::pair<const uint8_t*, size_t> > {
+	public:
+		void Remove(std::pair<const uint8_t*, size_t> Msg) {
+			for (INT nIndex(0); nIndex < GetSize(); nIndex++) {
+				if (GetAt(nIndex).second == Msg.second
+					&& memcmp(GetAt(nIndex).first, Msg.first, Msg.second) == 0) {
+					RemoveAt(nIndex);
+					break;
+				}
+			}
+		}
+	};
+
 protected:
 	HICON m_hIcon;
 
@@ -48,10 +64,10 @@ protected:
 	CSerialPort m_IC_7760_Serial;
 	CArray<uint8_t> m_IC_PW2_RcvBuf;
 	CArray<uint8_t> m_IC_7760_RcvBuf;
-	CArray<std::pair<const uint8_t*, size_t> > m_IC_PW2_XmtQueue;
-	CArray<std::pair<const uint8_t*, size_t> > m_IC_7760_XmtQueue;
-	CArray<std::pair<const uint8_t*, size_t> > m_IC_PW2_PollQueue;
-	CArray<std::pair<const uint8_t*, size_t> > m_IC_7760_PollQueue;
+	CCIVArray m_IC_PW2_XmtQueue;
+	CCIVArray m_IC_7760_XmtQueue;
+	CCIVArray m_IC_PW2_PollQueue;
+	CCIVArray m_IC_7760_PollQueue;
 	uint64_t m_FreqInput1;
 	uint64_t m_FreqInput2;
 	unsigned m_uPower;
@@ -78,6 +94,7 @@ protected:
 	CComboBox m_IC_7760_Port;
 	CSliderCtrl m_PwrCtrl;
 	CStatic m_Frequency;
+	CDataFilterDlg m_DataFilterDlg;
 
 	const uint8_t m_PW2_AmpSetting[7] = { 0xFE, 0xFE, 0xAA, 0xE0, 0x1A, 0x09, 0xFD };
 	const uint8_t m_PW2_PowerSetting[7] = { 0xFE, 0xFE, 0xAA, 0xE0, 0x1A, 0x0A, 0xFD };

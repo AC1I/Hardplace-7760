@@ -185,6 +185,7 @@
     </ResourceCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CDataFilterDlg.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Hardplace 7760.h" />
     <ClInclude Include="Hardplace 7760Dlg.h" />
@@ -195,6 +196,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CDataFilterDlg.cpp" />
     <ClCompile Include="Hardplace 7760.cpp" />
     <ClCompile Include="Hardplace 7760Dlg.cpp" />
     <ClCompile Include="OptionsDlg.cpp" />
@@ -212,8 +214,8 @@
     <None Include="res\Hardplace7760.rc2" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="..\..\..\..\Downloads\ico128.ico" />
-    <Image Include="..\..\..\..\downloads\icon2.ico" />
+    <Image Include="res\ico128.ico" />
+    <Image Include="res\icon2.ico" />
     <Image Include="res\Hardplace 7760.ico" />
     <Image Include="res\icon1.ico" />
   </ItemGroup>

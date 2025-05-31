@@ -39,6 +39,9 @@
     <ClInclude Include="OptionsDlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="CDataFilterDlg.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Hardplace 7760.cpp">
@@ -51,6 +54,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="OptionsDlg.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="CDataFilterDlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -71,10 +77,10 @@
     <Image Include="res\icon1.ico">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="..\..\..\..\Downloads\ico128.ico">
+    <Image Include="res\ico128.ico">
       <Filter>Resource Files</Filter>
     </Image>
-    <Image Include="..\..\..\..\downloads\icon2.ico">
+    <Image Include="res\icon2.ico">
       <Filter>Resource Files</Filter>
     </Image>
   </ItemGroup>

@@ -50,6 +50,7 @@ END_MESSAGE_MAP()
 // CHardplace7760Dlg dialog
 
 constexpr auto IDM_OPTIONS = 0x0020;
+constexpr auto IDM_DATAFILTER = 0x0030;
 
 CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_HARDPLACE_7760_DIALOG, pParent)
@@ -66,6 +67,7 @@ CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	, m_uBand(0), m_uDataMode(0), m_uFilter(0)
 	, m_uOperatingMode(0), m_wPW2Power(0)
 	, m_PW2Tuner(-1)
+	, m_DataFilterDlg(this)
 {
 	memset(m_IC7760LastCommand, '\0', sizeof m_IC7760LastCommand);
 	memset(m_PowerMap, '\0', sizeof m_PowerMap);
@@ -139,29 +141,37 @@ BOOL CHardplace7760Dlg::OnInitDialog()
 	ASSERT((IDM_ABOUTBOX & 0xFFF0) == IDM_ABOUTBOX);
 	ASSERT(IDM_ABOUTBOX < 0xF000);
 	ASSERT((IDM_OPTIONS & 0xFFF0) == IDM_OPTIONS);
-
+	ASSERT(IDM_OPTIONS < 0xF000);
+	ASSERT((IDM_DATAFILTER & 0xFFF0) == IDM_DATAFILTER);
+	ASSERT(IDM_DATAFILTER < 0xF000);
 
 	CMenu* pSysMenu = GetSystemMenu(FALSE);
 	if (pSysMenu != nullptr)
 	{
 		BOOL bNameValid;
-		CString strConstraint;
+		CString strOptions;
 		CString strAboutMenu;
+		CString strDataFilter;
 
-		bNameValid = strConstraint.LoadString(IDS_OPTIONS);
+		bNameValid = strOptions.LoadString(IDS_OPTIONS);
 		ASSERT(bNameValid);
 
 		bNameValid = strAboutMenu.LoadString(IDS_ABOUTBOX);
 		ASSERT(bNameValid);
+
+		bNameValid = strDataFilter.LoadString(IDS_DATAFILTER);
+		ASSERT(bNameValid);
+
 		if (!strAboutMenu.IsEmpty())
 		{
 			pSysMenu->AppendMenu(MF_SEPARATOR);
 			pSysMenu->AppendMenu(MF_STRING, IDM_ABOUTBOX, strAboutMenu);
 		}
-		if (!strConstraint.IsEmpty())
+		if (!strOptions.IsEmpty())
 		{
 			pSysMenu->AppendMenu(MF_SEPARATOR);
-			pSysMenu->AppendMenu(MF_STRING, IDM_OPTIONS, strConstraint);
+			pSysMenu->AppendMenu(MF_STRING, IDM_DATAFILTER, strDataFilter);
+			pSysMenu->AppendMenu(MF_STRING, IDM_OPTIONS, strOptions);
 		}
 	}
 
@@ -284,6 +294,10 @@ void CHardplace7760Dlg::OnSysCommand(UINT nID, LPARAM lParam)
 			theApp.WriteProfileInt(_T("Settings"), _T("PowerAlarmThreshold"), m_uPwrAlertThreshold);
 			theApp.WriteProfileInt(_T("Settings"), _T("PowerContraint"), m_fEnablePwrConstraint);
 		}
+	}
+	else if ((nID & 0xFFF0) == IDM_DATAFILTER)
+	{
+		m_DataFilterDlg.Create();
 	}
 	else
 	{
@@ -623,7 +637,7 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 					}
 				}
 				else if (m_PwrOn == 0
-						 && !m_IC_7760_PollQueue.IsEmpty())
+					&& !m_IC_7760_PollQueue.IsEmpty())
 				{
 					memcpy(m_IC7760LastCommand, m_IC_7760_PollQueue[0].first, m_IC_7760_PollQueue[0].second);
 					try
@@ -639,7 +653,7 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 					}
 				}
 				else if (m_PwrOn != 0
-						&& m_IC_7760_XmtQueue.IsEmpty())
+					&& m_IC_7760_XmtQueue.IsEmpty())
 				{
 					m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760_RFLevel, sizeof m_IC7760_RFLevel));
 				}
@@ -1233,21 +1247,36 @@ void CHardplace7760Dlg::onIC_7760Packet()
 			break;
 
 		case 0x26: // Operating Mode
+		{
+			CString szText;
+
+			GetDlgItemText(IDC_TUNE, szText);
+
+			bool isTuning(szText != _T("Tune"));
+
 			m_uBand = m_IC_7760_RcvBuf[5];
 			m_uOperatingMode = m_IC_7760_RcvBuf[6];
 			m_uDataMode = m_IC_7760_RcvBuf[7];
 			m_uFilter = m_IC_7760_RcvBuf[8];
+			if (!isTuning
+				&& m_DataFilterDlg.IsWindowVisible())
+			{
+				m_DataFilterDlg.UpdateDialog(m_uBand, m_uOperatingMode, m_uDataMode, m_uFilter);
+			}
+			else if (isTuning)
+			{
+				m_fTuning = true;
 
-			m_fTuning = true;
+				m_IC7760OperatingModeCmd[5] = m_IC_7760_RcvBuf[5];
+				m_IC7760OperatingModeCmd[6] = 0x04; // RTTY
+				m_IC7760OperatingModeCmd[7] = 0x00; // Data Mode off
+				m_IC7760OperatingModeCmd[8] = m_IC_7760_RcvBuf[8];
+				m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760OperatingModeCmd, sizeof m_IC7760OperatingModeCmd));
 
-			m_IC7760OperatingModeCmd[5] = m_IC_7760_RcvBuf[5];
-			m_IC7760OperatingModeCmd[6] = 0x04; // RTTY
-			m_IC7760OperatingModeCmd[7] = 0x00; // Data Mode off
-			m_IC7760OperatingModeCmd[8] = m_IC_7760_RcvBuf[8];
-			m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760OperatingModeCmd, sizeof m_IC7760OperatingModeCmd));
-
-			SetTimer(m_idTunerEvent, m_TunerTimeout, NULL);
+				SetTimer(m_idTunerEvent, m_TunerTimeout, NULL);
+			}
 			break;
+		}
 
 		case 0xFA: // NG Response
 			m_fTuning = false;
