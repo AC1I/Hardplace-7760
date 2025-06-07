@@ -2,10 +2,10 @@
 //
 
 #include "pch.h"
-#include "Hardplace 7760.h"
+#include "Hardplace7760.h"
 #include "afxdialogex.h"
 #include "CDataFilterDlg.h"
-#include "Hardplace 7760Dlg.h"
+#include "Hardplace7760Dlg.h"
 
 
 // CDataFilterDlg dialog
@@ -41,7 +41,7 @@ BOOL CDataFilterDlg::Create(CWnd* pParent)
 	if (fReturnVal)
 	{
 		ShowWindow(SW_SHOW);
-		m_pParent->m_IC_7760_PollQueue.Add(std::make_pair(m_IC7760_ReadDataFilterCmd, sizeof m_IC7760_ReadDataFilterCmd));
+		m_pParent->Poll(CHardplace7760Dlg::CCIVDescriptor(m_IC7760_ReadDataFilterCmd, sizeof m_IC7760_ReadDataFilterCmd));
 	}
 
 	return fReturnVal;
@@ -80,13 +80,13 @@ void CDataFilterDlg::OnClickedDataFilterMode(UINT nId)
 	m_IC7760_DataFilterCmd[6] = m_OperatingMode;
 	m_IC7760_DataFilterCmd[7] = m_iDataMode;
 	m_IC7760_DataFilterCmd[8] = m_iFilterMode + 1;
-	m_pParent->m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760_DataFilterCmd, sizeof m_IC7760_DataFilterCmd));
+	m_pParent->Xmt(CHardplace7760Dlg::CCIVDescriptor(m_IC7760_DataFilterCmd, sizeof m_IC7760_DataFilterCmd));
 }
 
 void CDataFilterDlg::OnClose()
 {
 	// TODO: Add your message handler code here and/or call default
-	m_pParent->m_IC_7760_PollQueue.Remove(std::make_pair(m_IC7760_ReadDataFilterCmd, sizeof m_IC7760_ReadDataFilterCmd));
+	m_pParent->CeasePolling(CHardplace7760Dlg::CCIVDescriptor(m_IC7760_ReadDataFilterCmd, sizeof m_IC7760_ReadDataFilterCmd));
 
 	CDialogEx::OnClose();
 }

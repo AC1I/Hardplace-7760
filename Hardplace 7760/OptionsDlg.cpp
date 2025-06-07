@@ -2,7 +2,7 @@
 //
 
 #include "pch.h"
-#include "Hardplace 7760.h"
+#include "Hardplace7760.h"
 #include "afxdialogex.h"
 #include "OptionsDlg.h"
 

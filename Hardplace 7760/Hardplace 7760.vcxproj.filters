@@ -15,10 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Hardplace 7760.h">
+    <ClInclude Include="Hardplace7760.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Hardplace 7760Dlg.h">
+    <ClInclude Include="Hardplace7760Dlg.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="framework.h">
@@ -47,10 +47,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Hardplace 7760.cpp">
+    <ClCompile Include="Hardplace7760.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Hardplace 7760Dlg.cpp">
+    <ClCompile Include="Hardplace7760Dlg.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="pch.cpp">

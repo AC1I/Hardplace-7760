@@ -188,8 +188,8 @@
     <ClInclude Include="CDataFilterDlg.h" />
     <ClInclude Include="CExtSpeakerDlg.h" />
     <ClInclude Include="framework.h" />
-    <ClInclude Include="Hardplace 7760.h" />
-    <ClInclude Include="Hardplace 7760Dlg.h" />
+    <ClInclude Include="Hardplace7760.h" />
+    <ClInclude Include="Hardplace7760Dlg.h" />
     <ClInclude Include="OptionsDlg.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Resource.h" />
@@ -199,8 +199,8 @@
   <ItemGroup>
     <ClCompile Include="CDataFilterDlg.cpp" />
     <ClCompile Include="CExtSpeakerDlg.cpp" />
-    <ClCompile Include="Hardplace 7760.cpp" />
-    <ClCompile Include="Hardplace 7760Dlg.cpp" />
+    <ClCompile Include="Hardplace7760.cpp" />
+    <ClCompile Include="Hardplace7760Dlg.cpp" />
     <ClCompile Include="OptionsDlg.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

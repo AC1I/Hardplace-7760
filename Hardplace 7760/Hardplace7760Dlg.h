@@ -28,10 +28,18 @@ protected:
 
 
 	// Implementation
-	friend CDataFilterDlg;
-	friend CExtSpeakerDlg;
 
-	class CCIVArray : public CArray<std::pair<const uint8_t*, size_t> > {
+public:
+	class CCIVDescriptor : public std::pair<const uint8_t*, size_t> {
+	public:
+		CCIVDescriptor(const uint8_t* pPkt = nullptr, size_t stPktLen = 0)
+			/* : first(pPkt), second(stPktLen)  */ {
+			first = pPkt;
+			second = stPktLen;
+		}
+	};
+
+	class CCIVArray : public CArray<CCIVDescriptor> {
 	public:
 		void Remove(std::pair<const uint8_t*, size_t> Msg) {
 			for (INT nIndex(0); nIndex < GetSize(); nIndex++) {
@@ -43,6 +51,16 @@ protected:
 			}
 		}
 	};
+
+	void Poll(CCIVDescriptor Pkt) {
+		m_IC_7760_PollQueue.Add(Pkt);
+	}
+	void CeasePolling(CCIVDescriptor Pkt) {
+		m_IC_7760_PollQueue.Remove(Pkt);
+	}
+	void Xmt(CCIVDescriptor Pkt) {
+		m_IC_7760_XmtQueue.Add(Pkt);
+	}
 
 protected:
 	HICON m_hIcon;

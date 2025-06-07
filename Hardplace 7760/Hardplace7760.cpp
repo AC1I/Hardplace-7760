@@ -4,8 +4,8 @@
 
 #include "pch.h"
 #include "framework.h"
-#include "Hardplace 7760.h"
-#include "Hardplace 7760Dlg.h"
+#include "Hardplace7760.h"
+#include "Hardplace7760Dlg.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW

@@ -4,8 +4,8 @@
 
 #include "pch.h"
 #include "framework.h"
-#include "Hardplace 7760.h"
-#include "Hardplace 7760Dlg.h"
+#include "Hardplace7760.h"
+#include "Hardplace7760Dlg.h"
 #include "OptionsDlg.h"
 #include "afxdialogex.h"
 
@@ -75,17 +75,17 @@ CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	memset(m_PowerMap, '\0', sizeof m_PowerMap);
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 
-	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_AmpSetting, sizeof m_PW2_AmpSetting));
-	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_PowerSetting, sizeof m_PW2_PowerSetting));
-	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_PowerOut, sizeof m_PW2_PowerOut));
-	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_SWR, sizeof m_PW2_SWR));
-	m_IC_PW2_PollQueue.Add(std::make_pair(m_PW2_Tuner, sizeof m_PW2_Tuner));
+	m_IC_PW2_PollQueue.Add(CCIVDescriptor(m_PW2_AmpSetting, sizeof m_PW2_AmpSetting));
+	m_IC_PW2_PollQueue.Add(CCIVDescriptor(m_PW2_PowerSetting, sizeof m_PW2_PowerSetting));
+	m_IC_PW2_PollQueue.Add(CCIVDescriptor(m_PW2_PowerOut, sizeof m_PW2_PowerOut));
+	m_IC_PW2_PollQueue.Add(CCIVDescriptor(m_PW2_SWR, sizeof m_PW2_SWR));
+	m_IC_PW2_PollQueue.Add(CCIVDescriptor(m_PW2_Tuner, sizeof m_PW2_Tuner));
 
-	m_IC_7760_PollQueue.Add(std::make_pair(m_IC7760_RFLevel, sizeof m_IC7760_RFLevel));
-	m_IC_7760_PollQueue.Add(std::make_pair(m_IC7760DataFilter, sizeof m_IC7760DataFilter));
-	m_IC_7760_PollQueue.Add(std::make_pair(m_IC7760_Tuner, sizeof m_IC7760_Tuner));
+	m_IC_7760_PollQueue.Add(CCIVDescriptor(m_IC7760_RFLevel, sizeof m_IC7760_RFLevel));
+	m_IC_7760_PollQueue.Add(CCIVDescriptor(m_IC7760DataFilter, sizeof m_IC7760DataFilter));
+	m_IC_7760_PollQueue.Add(CCIVDescriptor(m_IC7760_Tuner, sizeof m_IC7760_Tuner));
 
-	m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760_RFLevel, sizeof m_IC7760_RFLevel));
+	m_IC_7760_XmtQueue.Add(CCIVDescriptor(m_IC7760_RFLevel, sizeof m_IC7760_RFLevel));
 
 	uint8_t* lpPwrMap(0);
 	UINT nl;
@@ -437,7 +437,7 @@ void CHardplace7760Dlg::On7760ComOpen()
 		{
 			OpenCommPort(int(m_IC_7760_Port.GetItemData(m_IC_7760_Port.GetCurSel())), m_IC_7760_Serial);
 			theApp.WriteProfileInt(_T("Settings"), _T("IC_7760_Port"), int(m_IC_7760_Port.GetItemData(m_IC_7760_Port.GetCurSel())));
-			m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760_RFLevel, sizeof m_IC7760_RFLevel));
+			m_IC_7760_XmtQueue.Add(CCIVDescriptor(m_IC7760_RFLevel, sizeof m_IC7760_RFLevel));
 		}
 	}
 	catch (CSerialException ex)
@@ -594,7 +594,7 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 					try
 					{
 						m_IC_PW2_Serial.Write(m_IC_PW2_PollQueue[0].first, DWORD(m_IC_PW2_PollQueue[0].second));
-						m_IC_PW2_PollQueue.Add(std::make_pair(m_IC_PW2_PollQueue[0].first, m_IC_PW2_PollQueue[0].second));
+						m_IC_PW2_PollQueue.Add(CCIVDescriptor(m_IC_PW2_PollQueue[0].first, m_IC_PW2_PollQueue[0].second));
 						m_IC_PW2_PollQueue.RemoveAt(0);
 					}
 					catch (CSerialException ex) {
@@ -656,7 +656,7 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 					try
 					{
 						m_IC_7760_Serial.Write(m_IC_7760_PollQueue[0].first, DWORD(m_IC_7760_PollQueue[0].second));
-						m_IC_7760_PollQueue.Add(std::make_pair(m_IC_7760_PollQueue[0].first, m_IC_7760_PollQueue[0].second));
+						m_IC_7760_PollQueue.Add(CCIVDescriptor(m_IC_7760_PollQueue[0].first, m_IC_7760_PollQueue[0].second));
 						m_IC_7760_PollQueue.RemoveAt(0);
 					}
 					catch (CSerialException ex) {
@@ -668,7 +668,7 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 				else if (m_PwrOn != 0
 					&& m_IC_7760_XmtQueue.IsEmpty())
 				{
-					m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760_RFLevel, sizeof m_IC7760_RFLevel));
+					m_IC_7760_XmtQueue.Add(CCIVDescriptor(m_IC7760_RFLevel, sizeof m_IC7760_RFLevel));
 				}
 			}
 		}
@@ -676,8 +676,8 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 	else if (nIDEvent == m_idTunerEvent)
 	{
 		m_IC7760Transmit[6] = 0x00;
-		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760Transmit, sizeof m_IC7760Transmit));
-		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760Transmit, sizeof m_IC7760Transmit));
+		m_IC_7760_XmtQueue.Add(CCIVDescriptor(m_IC7760Transmit, sizeof m_IC7760Transmit));
+		m_IC_7760_XmtQueue.Add(CCIVDescriptor(m_IC7760Transmit, sizeof m_IC7760Transmit));
 
 		if (m_fTuning)
 		{
@@ -687,7 +687,7 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 			m_IC7760OperatingModeCmd[6] = m_uOperatingMode;
 			m_IC7760OperatingModeCmd[7] = m_uDataMode;
 			m_IC7760OperatingModeCmd[8] = m_uFilter;
-			m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760OperatingModeCmd, sizeof m_IC7760OperatingModeCmd));
+			m_IC_7760_XmtQueue.Add(CCIVDescriptor(m_IC7760OperatingModeCmd, sizeof m_IC7760OperatingModeCmd));
 		}
 
 		KillTimer(m_idTunerEvent);
@@ -715,12 +715,12 @@ void CHardplace7760Dlg::OnClickedTuner(UINT nId)
 		if (m_IC_PW2_Serial.IsOpen())
 		{
 			m_PW2_TunerCmd[6] = m_PW2Tuner;
-			m_IC_PW2_XmtQueue.Add(std::make_pair(m_PW2_TunerCmd, sizeof m_PW2_TunerCmd));
+			m_IC_PW2_XmtQueue.Add(CCIVDescriptor(m_PW2_TunerCmd, sizeof m_PW2_TunerCmd));
 		}
 		else
 		{
 			m_IC7760_TunerCmd[6] = m_PW2Tuner;
-			m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760_TunerCmd, sizeof m_IC7760_TunerCmd));
+			m_IC_7760_XmtQueue.Add(CCIVDescriptor(m_IC7760_TunerCmd, sizeof m_IC7760_TunerCmd));
 		}
 		break;
 
@@ -738,7 +738,7 @@ void CHardplace7760Dlg::OnClickedAmp(UINT nId)
 	case 0:
 	case 1:
 		m_PW2_AmpCmd[6] = m_Amp;
-		m_IC_PW2_XmtQueue.Add(std::make_pair(m_PW2_AmpCmd, sizeof m_PW2_AmpCmd));
+		m_IC_PW2_XmtQueue.Add(CCIVDescriptor(m_PW2_AmpCmd, sizeof m_PW2_AmpCmd));
 		break;
 
 	default:
@@ -755,7 +755,7 @@ void CHardplace7760Dlg::OnClickedMaxPower(UINT nId)
 	case 0:
 	case 1:
 		m_PW2_MaxPwrCmd[6] = m_MaxPower;
-		m_IC_PW2_XmtQueue.Add(std::make_pair(m_PW2_MaxPwrCmd, sizeof m_PW2_MaxPwrCmd));
+		m_IC_PW2_XmtQueue.Add(CCIVDescriptor(m_PW2_MaxPwrCmd, sizeof m_PW2_MaxPwrCmd));
 		break;
 
 	default:
@@ -772,43 +772,43 @@ void CHardplace7760Dlg::OnClickedRFLevel(UINT nId)
 	case 0:
 		m_IC7760RFLevelCmd[6] = 0x00;
 		m_IC7760RFLevelCmd[7] = 0x07;
-		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
+		m_IC_7760_XmtQueue.Add(CCIVDescriptor(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
 		break;
 
 	case 1:
 		m_IC7760RFLevelCmd[6] = 0x00;
 		m_IC7760RFLevelCmd[7] = 0x13;
-		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
+		m_IC_7760_XmtQueue.Add(CCIVDescriptor(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
 		break;
 
 	case 2:
 		m_IC7760RFLevelCmd[6] = 0x00;
 		m_IC7760RFLevelCmd[7] = 0x26;
-		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
+		m_IC_7760_XmtQueue.Add(CCIVDescriptor(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
 		break;
 
 	case 3:
 		m_IC7760RFLevelCmd[6] = 0x00;
 		m_IC7760RFLevelCmd[7] = 0x64;
-		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
+		m_IC_7760_XmtQueue.Add(CCIVDescriptor(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
 		break;
 
 	case 4:
 		m_IC7760RFLevelCmd[6] = 0x01;
 		m_IC7760RFLevelCmd[7] = 0x28;
-		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
+		m_IC_7760_XmtQueue.Add(CCIVDescriptor(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
 		break;
 
 	case 5:
 		m_IC7760RFLevelCmd[6] = 0x01;
 		m_IC7760RFLevelCmd[7] = 0x92;
-		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
+		m_IC_7760_XmtQueue.Add(CCIVDescriptor(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
 		break;
 
 	case 6:
 		m_IC7760RFLevelCmd[6] = 0x02;
 		m_IC7760RFLevelCmd[7] = 0x55;
-		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
+		m_IC_7760_XmtQueue.Add(CCIVDescriptor(m_IC7760RFLevelCmd, sizeof m_IC7760RFLevelCmd));
 		break;
 
 	default:
@@ -826,12 +826,12 @@ void CHardplace7760Dlg::OnClickedPower(UINT nId)
 	{
 	case 0:
 		m_IC7760PwrCmd[5] = 0x01;
-		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760PwrCmd, sizeof m_IC7760PwrCmd));
+		m_IC_7760_XmtQueue.Add(CCIVDescriptor(m_IC7760PwrCmd, sizeof m_IC7760PwrCmd));
 		break;
 
 	case 1:
 		m_IC7760PwrCmd[5] = 0x00;
-		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760PwrCmd, sizeof m_IC7760PwrCmd));
+		m_IC_7760_XmtQueue.Add(CCIVDescriptor(m_IC7760PwrCmd, sizeof m_IC7760PwrCmd));
 		break;
 
 	default:
@@ -852,7 +852,7 @@ void CHardplace7760Dlg::OnClickedTune()
 	if (!m_fAbortTuning)
 	{
 		SetDlgItemText(IDC_TUNE, _T("Tuning"));
-		m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760SplitSetting, sizeof m_IC7760SplitSetting));
+		m_IC_7760_XmtQueue.Add(CCIVDescriptor(m_IC7760SplitSetting, sizeof m_IC7760SplitSetting));
 	}
 	else
 	{
@@ -878,7 +878,7 @@ void CHardplace7760Dlg::OnVScroll(UINT nSBCode, UINT nPos, CScrollBar* pScrollBa
 
 			m_IC7760SetPower[6] = ((uLevelHigh / 10) << 4) + uLevelHigh % 10;
 			m_IC7760SetPower[7] = ((uLevelLow / 10) << 4) + uLevelLow % 10;
-			m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760SetPower, sizeof m_IC7760SetPower));
+			m_IC_7760_XmtQueue.Add(CCIVDescriptor(m_IC7760SetPower, sizeof m_IC7760SetPower));
 		}
 		break;
 		}
@@ -1143,7 +1143,7 @@ void CHardplace7760Dlg::onIC_7760Packet()
 		{
 		case 0x0F:
 			m_IC7760OperatingMode[5] = m_IC_7760_RcvBuf[5];
-			m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760OperatingMode, sizeof m_IC7760OperatingMode));
+			m_IC_7760_XmtQueue.Add(CCIVDescriptor(m_IC7760OperatingMode, sizeof m_IC7760OperatingMode));
 			break;
 
 		case 0x14:
@@ -1219,7 +1219,7 @@ void CHardplace7760Dlg::onIC_7760Packet()
 				}
 				else
 				{
-					m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760SWR, sizeof m_IC7760SWR));
+					m_IC_7760_XmtQueue.Add(CCIVDescriptor(m_IC7760SWR, sizeof m_IC7760SWR));
 				}
 				break;
 
@@ -1293,7 +1293,7 @@ void CHardplace7760Dlg::onIC_7760Packet()
 				m_IC7760OperatingModeCmd[6] = 0x04; // RTTY
 				m_IC7760OperatingModeCmd[7] = 0x00; // Data Mode off
 				m_IC7760OperatingModeCmd[8] = m_IC_7760_RcvBuf[8];
-				m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760OperatingModeCmd, sizeof m_IC7760OperatingModeCmd));
+				m_IC_7760_XmtQueue.Add(CCIVDescriptor(m_IC7760OperatingModeCmd, sizeof m_IC7760OperatingModeCmd));
 
 				SetTimer(m_idTunerEvent, m_TunerTimeout, NULL);
 			}
@@ -1339,7 +1339,7 @@ void CHardplace7760Dlg::onIC_7760Packet()
 					else if (m_TunerMonitorSWR
 						&& m_IC7760LastCommand[6] != 0x00)
 					{
-						m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760SWR, sizeof m_IC7760SWR));
+						m_IC_7760_XmtQueue.Add(CCIVDescriptor(m_IC7760SWR, sizeof m_IC7760SWR));
 					}
 					break;
 
@@ -1352,7 +1352,7 @@ void CHardplace7760Dlg::onIC_7760Packet()
 				if (m_fTuning)
 				{
 					m_IC7760Transmit[6] = 0x01;
-					m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760Transmit, sizeof m_IC7760Transmit));
+					m_IC_7760_XmtQueue.Add(CCIVDescriptor(m_IC7760Transmit, sizeof m_IC7760Transmit));
 				}
 				break;
 

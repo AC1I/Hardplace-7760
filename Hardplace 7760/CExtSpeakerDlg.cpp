@@ -2,10 +2,10 @@
 //
 
 #include "pch.h"
-#include "Hardplace 7760.h"
+#include "Hardplace7760.h"
 #include "afxdialogex.h"
 #include "CExtSpeakerDlg.h"
-#include "Hardplace 7760Dlg.h"
+#include "Hardplace7760Dlg.h"
 
 // CExtSpeakerDlg dialog
 
@@ -44,7 +44,7 @@ BOOL CExtSpeakerDlg::Create(CWnd* pParent)
 	if (fReturnVal)
 	{
 		ShowWindow(SW_SHOW);
-		m_pParent->m_IC_7760_PollQueue.Add(std::make_pair(m_IC7760AFOutputPoll, sizeof m_IC7760AFOutputPoll));
+		m_pParent->Poll(CHardplace7760Dlg::CCIVDescriptor(m_IC7760AFOutputPoll, sizeof m_IC7760AFOutputPoll));
 	}
 
 	return fReturnVal;
@@ -61,7 +61,7 @@ END_MESSAGE_MAP()
 void CExtSpeakerDlg::OnClose()
 {
 	// TODO: Add your message handler code here and/or call default
-	m_pParent->m_IC_7760_PollQueue.Remove(std::make_pair(m_IC7760AFOutputPoll, sizeof m_IC7760AFOutputPoll));
+	m_pParent->CeasePolling(CHardplace7760Dlg::CCIVDescriptor(m_IC7760AFOutputPoll, sizeof m_IC7760AFOutputPoll));
 
 	CDialogEx::OnClose();
 }
@@ -72,5 +72,5 @@ void CExtSpeakerDlg::OnClickedReceiver(UINT nId)
 	m_IC7760AFOutputCmd[8] = m_LineOut;
 	m_LineOut = -1;
 	UpdateData(FALSE);
-	m_pParent->m_IC_7760_XmtQueue.Add(std::make_pair(m_IC7760AFOutputCmd, sizeof m_IC7760AFOutputCmd));
+	m_pParent->Xmt(CHardplace7760Dlg::CCIVDescriptor(m_IC7760AFOutputCmd, sizeof m_IC7760AFOutputCmd));
 }
