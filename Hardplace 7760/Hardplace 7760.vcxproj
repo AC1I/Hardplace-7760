@@ -186,6 +186,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="CDataFilterDlg.h" />
+    <ClInclude Include="CExtSpeakerDlg.h" />
     <ClInclude Include="framework.h" />
     <ClInclude Include="Hardplace 7760.h" />
     <ClInclude Include="Hardplace 7760Dlg.h" />
@@ -197,6 +198,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="CDataFilterDlg.cpp" />
+    <ClCompile Include="CExtSpeakerDlg.cpp" />
     <ClCompile Include="Hardplace 7760.cpp" />
     <ClCompile Include="Hardplace 7760Dlg.cpp" />
     <ClCompile Include="OptionsDlg.cpp" />

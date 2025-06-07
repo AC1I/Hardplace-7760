@@ -8,6 +8,7 @@
 #include <afxwin.h>
 #include <utility>
 #include "CDataFilterDlg.h"
+#include "CExtSpeakerDlg.h"
 
 
 // CHardplace7760Dlg dialog
@@ -28,6 +29,7 @@ protected:
 
 	// Implementation
 	friend CDataFilterDlg;
+	friend CExtSpeakerDlg;
 
 	class CCIVArray : public CArray<std::pair<const uint8_t*, size_t> > {
 	public:
@@ -95,6 +97,7 @@ protected:
 	CSliderCtrl m_PwrCtrl;
 	CStatic m_Frequency;
 	CDataFilterDlg m_DataFilterDlg;
+	CExtSpeakerDlg m_SpeakerDlg;
 
 	const uint8_t m_PW2_AmpSetting[7] = { 0xFE, 0xFE, 0xAA, 0xE0, 0x1A, 0x09, 0xFD };
 	const uint8_t m_PW2_PowerSetting[7] = { 0xFE, 0xFE, 0xAA, 0xE0, 0x1A, 0x0A, 0xFD };

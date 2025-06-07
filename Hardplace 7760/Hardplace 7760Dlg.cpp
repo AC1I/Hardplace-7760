@@ -51,6 +51,7 @@ END_MESSAGE_MAP()
 
 constexpr auto IDM_OPTIONS = 0x0020;
 constexpr auto IDM_DATAFILTER = 0x0030;
+constexpr auto IDM_EXTSPEAKER = 0x0040;
 
 CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	: CDialogEx(IDD_HARDPLACE_7760_DIALOG, pParent)
@@ -68,6 +69,7 @@ CHardplace7760Dlg::CHardplace7760Dlg(CWnd* pParent /*=nullptr*/)
 	, m_uOperatingMode(0), m_wPW2Power(0)
 	, m_PW2Tuner(-1)
 	, m_DataFilterDlg(this)
+	, m_SpeakerDlg(this)
 {
 	memset(m_IC7760LastCommand, '\0', sizeof m_IC7760LastCommand);
 	memset(m_PowerMap, '\0', sizeof m_PowerMap);
@@ -144,6 +146,8 @@ BOOL CHardplace7760Dlg::OnInitDialog()
 	ASSERT(IDM_OPTIONS < 0xF000);
 	ASSERT((IDM_DATAFILTER & 0xFFF0) == IDM_DATAFILTER);
 	ASSERT(IDM_DATAFILTER < 0xF000);
+	ASSERT((IDM_EXTSPEAKER & 0xFFF0) == IDM_EXTSPEAKER);
+	ASSERT(IDM_EXTSPEAKER < 0xF000);
 
 	CMenu* pSysMenu = GetSystemMenu(FALSE);
 	if (pSysMenu != nullptr)
@@ -152,6 +156,7 @@ BOOL CHardplace7760Dlg::OnInitDialog()
 		CString strOptions;
 		CString strAboutMenu;
 		CString strDataFilter;
+		CString strExtSpeaker;
 
 		bNameValid = strOptions.LoadString(IDS_OPTIONS);
 		ASSERT(bNameValid);
@@ -160,6 +165,9 @@ BOOL CHardplace7760Dlg::OnInitDialog()
 		ASSERT(bNameValid);
 
 		bNameValid = strDataFilter.LoadString(IDS_DATAFILTER);
+		ASSERT(bNameValid);
+
+		bNameValid = strExtSpeaker.LoadString(IDS_EXTSPEAKER);
 		ASSERT(bNameValid);
 
 		if (!strAboutMenu.IsEmpty())
@@ -171,6 +179,7 @@ BOOL CHardplace7760Dlg::OnInitDialog()
 		{
 			pSysMenu->AppendMenu(MF_SEPARATOR);
 			pSysMenu->AppendMenu(MF_STRING, IDM_DATAFILTER, strDataFilter);
+			pSysMenu->AppendMenu(MF_STRING, IDM_EXTSPEAKER, strExtSpeaker);
 			pSysMenu->AppendMenu(MF_STRING, IDM_OPTIONS, strOptions);
 		}
 	}
@@ -298,6 +307,10 @@ void CHardplace7760Dlg::OnSysCommand(UINT nID, LPARAM lParam)
 	else if ((nID & 0xFFF0) == IDM_DATAFILTER)
 	{
 		m_DataFilterDlg.Create();
+	}
+	else if ((nID & 0xFFF0) == IDM_EXTSPEAKER)
+	{
+		m_SpeakerDlg.Create();
 	}
 	else
 	{
@@ -1218,6 +1231,15 @@ void CHardplace7760Dlg::onIC_7760Packet()
 		case 0x1A:
 			switch (m_IC_7760_RcvBuf[5])
 			{
+			case 0x05:
+				if (m_IC_7760_RcvBuf.GetCount() == 10
+					&& m_IC_7760_RcvBuf[6] == 0x01
+					&& m_IC_7760_RcvBuf[7] == 0x09)
+				{
+					m_SpeakerDlg.UpdateDialog(m_IC_7760_RcvBuf[8]);
+				}
+				break;
+
 			case 0x06:
 				if (m_IC_7760_RcvBuf.GetCount() == 9)
 				{

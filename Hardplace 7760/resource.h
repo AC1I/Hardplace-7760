@@ -10,10 +10,12 @@
 #define IDS_PORTBUSY                    103
 #define IDS_OPTIONS                     104
 #define IDS_DATAFILTER                  105
+#define IDS_EXTSPEAKER                  106
 #define IDR_MAINFRAME                   128
 #define IDI_ICON1                       131
 #define IDD_OPTIONS                     132
 #define IDD_DATAFILTER                  134
+#define IDD_LINEOUT                     136
 #define IDC_PW2_Port                    1000
 #define IDC_7760_PORT                   1001
 #define IDC_PW2_COM_OPEN                1002
@@ -57,14 +59,16 @@
 #define IDC_FILTER3                     1040
 #define IDC_RCVRMAIN                    1041
 #define IDC_RCVRSUB                     1042
+#define IDC_LINEOUT_MAIN                1043
+#define IDC_LINEOUT_SUB                 1044
 
 // Next default values for new objects
 // 
 #ifdef APSTUDIO_INVOKED
 #ifndef APSTUDIO_READONLY_SYMBOLS
-#define _APS_NEXT_RESOURCE_VALUE        136
+#define _APS_NEXT_RESOURCE_VALUE        138
 #define _APS_NEXT_COMMAND_VALUE         32771
-#define _APS_NEXT_CONTROL_VALUE         1043
+#define _APS_NEXT_CONTROL_VALUE         1045
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif
