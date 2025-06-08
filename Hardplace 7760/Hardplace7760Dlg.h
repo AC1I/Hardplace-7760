@@ -33,23 +33,95 @@ public:
 	class CCIVDescriptor : public std::pair<const uint8_t*, size_t> {
 	public:
 		CCIVDescriptor(const uint8_t* pPkt = nullptr, size_t stPktLen = 0)
-			/* : first(pPkt), second(stPktLen)  */ {
-			first = pPkt;
-			second = stPktLen;
+		: std::pair<const uint8_t*, size_t>(pPkt, stPktLen) {
 		}
 	};
 
-	class CCIVArray : public CArray<CCIVDescriptor> {
+	class CCIVArray : private CArray<CCIVDescriptor> {
 	public:
 		void Remove(std::pair<const uint8_t*, size_t> Msg) {
-			for (INT nIndex(0); nIndex < GetSize(); nIndex++) {
-				if (GetAt(nIndex).second == Msg.second
-					&& memcmp(GetAt(nIndex).first, Msg.first, Msg.second) == 0) {
-					RemoveAt(nIndex);
+			AutoLock Lock(m_CritSection);
+
+			for (INT nIndex(0); nIndex < CArray::GetSize(); nIndex++) {
+				if (CArray::GetAt(nIndex).second == Msg.second
+					&& memcmp(CArray::GetAt(nIndex).first, Msg.first, Msg.second) == 0) {
+					CArray::RemoveAt(nIndex);
 					break;
 				}
 			}
 		}
+		INT_PTR Add(CCIVDescriptor newElement) {
+			AutoLock Lock(m_CritSection);
+
+			return CArray::Add(newElement);
+		}
+		BOOL IsEmpty() {
+			AutoLock Lock(m_CritSection);
+
+			return CArray::IsEmpty();
+		}
+		void RemoveAt(INT_PTR nIndex, INT_PTR nCount = 1) {
+			AutoLock Lock(m_CritSection);
+
+			CArray::RemoveAt(nIndex, nCount);
+		}
+		void RemoveAll() {
+			AutoLock Lock(m_CritSection);
+
+			CArray::RemoveAll();
+		}
+		void SetAt(INT_PTR nIndex, CCIVDescriptor newElement) {
+			AutoLock Lock(m_CritSection);
+
+			CArray::SetAt(nIndex, newElement);
+		}
+		CCIVDescriptor& GetAt(INT_PTR nIndex) {
+			AutoLock Lock(m_CritSection);
+
+			return CArray::GetAt(nIndex);
+		}
+		const CCIVDescriptor& GetAt(INT_PTR nIndex) const {
+			AutoLock Lock(const_cast<CCIVArray*>(this)->m_CritSection);
+
+			return CArray::GetAt(nIndex);
+		}
+		INT_PTR GetCount() const {
+			AutoLock Lock(const_cast<CCIVArray*>(this)->m_CritSection);
+
+			return CArray::GetCount();
+		}
+		CCIVDescriptor& operator[](INT_PTR nIndex) {
+			return GetAt(nIndex);
+		}
+		const CCIVDescriptor& operator[](INT_PTR nIndex) const {
+			AutoLock Lock(const_cast<CCIVArray*>(this)->m_CritSection);
+
+			return CArray::GetAt(nIndex);
+		}
+		void Rotate(void) {
+			AutoLock Lock(m_CritSection);
+
+			CArray::Add(CArray::GetAt(0));
+			CArray::RemoveAt(0);
+		}
+
+
+	private:
+		class AutoLock {
+		public:
+			AutoLock(CCriticalSection& CritSection)
+				: m_CritSection(CritSection) {
+				m_CritSection.Lock();
+			}
+			~AutoLock() {
+				m_CritSection.Unlock();
+			}
+		private:
+			CCriticalSection& m_CritSection;
+		};
+
+	private:
+		CCriticalSection m_CritSection;
 	};
 
 	void Poll(CCIVDescriptor Pkt) {

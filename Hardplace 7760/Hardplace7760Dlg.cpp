@@ -594,8 +594,7 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 					try
 					{
 						m_IC_PW2_Serial.Write(m_IC_PW2_PollQueue[0].first, DWORD(m_IC_PW2_PollQueue[0].second));
-						m_IC_PW2_PollQueue.Add(CCIVDescriptor(m_IC_PW2_PollQueue[0].first, m_IC_PW2_PollQueue[0].second));
-						m_IC_PW2_PollQueue.RemoveAt(0);
+						m_IC_PW2_PollQueue.Rotate();
 					}
 					catch (CSerialException ex) {
 						onSerialException(ex, m_IC_PW2_Serial);
@@ -656,8 +655,7 @@ void CHardplace7760Dlg::OnTimer(UINT_PTR nIDEvent)
 					try
 					{
 						m_IC_7760_Serial.Write(m_IC_7760_PollQueue[0].first, DWORD(m_IC_7760_PollQueue[0].second));
-						m_IC_7760_PollQueue.Add(CCIVDescriptor(m_IC_7760_PollQueue[0].first, m_IC_7760_PollQueue[0].second));
-						m_IC_7760_PollQueue.RemoveAt(0);
+						m_IC_7760_PollQueue.Rotate();
 					}
 					catch (CSerialException ex) {
 						onSerialException(ex, m_IC_7760_Serial);
